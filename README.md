@@ -4,7 +4,7 @@
 - First build the solution in visual studio with `shift+ctrl+b`.
 - Open ./x64/Debug and copy the location of the folder.
 - Add the copied path to your environment variables.
-- Move the dose.bat file in C:/winows(on windows)
+- copy the dose.bat file in C:/winows(on windows)
 
 open the terminal and you are ready to go.
 The root command is `dose`.
