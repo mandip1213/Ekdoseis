@@ -1,5 +1,5 @@
 
 @echo off
 
-Ekdoseis %cd% %*
+Ekdoseis "%cd%" %*
 
