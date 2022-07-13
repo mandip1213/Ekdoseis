@@ -144,10 +144,12 @@
     <ClCompile Include="dose.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="parser.cpp" />
+    <ClCompile Include="sha1.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="dose.h" />
     <ClInclude Include="parser.h" />
+    <ClInclude Include="sha1.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md" />

@@ -14,6 +14,6 @@ int main(int argc, const char* argv[])
 		return EXIT_FAILURE;
 	}
 	Dose dose{ argc,argv };
-	dose.parse().execCommand();
+	dose.parseRootCommand().execCommand();
 	return 0;
 }

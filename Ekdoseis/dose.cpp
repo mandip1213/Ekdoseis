@@ -3,6 +3,7 @@
 #include<windows.h>//for fileapi.h
 #include<fileapi.h>
 #include"dose.h"
+#
 #define endl '\n'
 
 using std::cout;
@@ -14,8 +15,8 @@ std::ostream& operator<<(std::ostream& out, const Dose& dose) {
 
 	return out;
 }
-
-Dose& Dose::parse() {
+#include "SHA1.h"
+Dose& Dose::parseRootCommand() {
 	const char* arg_path = margv[1];
 	const char* arg_cmd = margv[2];
 	/*
@@ -29,6 +30,9 @@ Dose& Dose::parse() {
 	*/
 	if (strcmp(arg_cmd, "init") == 0) {
 		mcommand = INIT;
+	}
+	else if (strcmp(arg_cmd, "add") == 0) {
+		mcommand = ADD;
 	}
 	else {
 		cout << "Error:" << *this << "doesnot exist" << endl;
@@ -46,7 +50,7 @@ ReturnFlag Dose::createDirectory(const std::string_view& dirName, CreateFlag fla
 		else if (flags == OVERRIDE_IF_EXISTS) {
 			if (!remove(newDir)) {
 				return OVERRIDE_FAILURE;
-			}
+			}//todo : create a new won now
 			return OVERRIDE_SUCCESS;
 		}
 	}
@@ -87,7 +91,7 @@ Dose& Dose::init() {
 	if (!(_headf))errorExit();
 	std::ofstream headptr{ mrootPath / ".dose/HEAD" };
 	if (!headptr)errorExit();
-	headptr<< "refs/heads/main" << endl;
+	headptr << "refs/heads/main" << endl;
 	_headf.close();
 	headptr.close();
 	cout << "Successfully Initialized empty repo in" << *this << endl;
@@ -95,9 +99,83 @@ Dose& Dose::init() {
 	return *this;
 }
 Dose& Dose::execCommand() {
-	if (mcommand == INIT) {
-		init();
+	switch (mcommand) {
+	case INIT:init(); break;
+	case ADD:add(); break;
 	}
 	return *this;
-
 }
+Dose& Dose::add() {
+	//check for git init
+	if (!exists(mrootPath / ".dose/index")) {
+		std::ofstream _headptr{ mrootPath / ".dose/index" };
+		_headptr.close();
+	}
+	for (int i = 3; i < margc; i++) {
+		const path _filePath = mrootPath / margv[i];
+		//if(isFile)//todo
+		if (!exists(_filePath)) {
+			cout << "Error: " << _filePath.string() << " doesnot exists." << endl;
+			exit(EXIT_FAILURE);
+		}
+		doseIgnore = DoseIgnore(mrootPath);//we only need it now
+		if (doseIgnore.has(_filePath)) {
+			cout << "Error: " << *margv[i] << " already exists in the gitignore." << endl;
+			exit(EXIT_FAILURE);
+		}
+		//todo: cout to cerr
+		SHA1 fileSHA;
+		const path objectPath = mrootPath / ".dose/objects";
+		std::string hash{ fileSHA.from_file(_filePath.string()) };
+		size_t   hashLength{ hash.length() };//read: size_t
+		if (!hashLength == 40) {
+			std::cerr << "Error: " << "Unwanted hash length" << endl;
+		}
+		const path hashDirPath = objectPath / hash.substr(0, 2);
+		ReturnFlag _rf1 = createDirectory(hashDirPath.string());
+		if (!(_rf1 == CREATE_SUCCESS || _rf1 == ALREADY_EXISTS)) {
+			cout << "Error: " << "cannot perform the required action" << endl;
+			exit(EXIT_FAILURE);
+		}
+		const path _hashFilePath{ hashDirPath / hash.substr(2,hashLength - 2) };
+		std::error_code ec;
+
+		copy_file(_filePath, _hashFilePath, copy_options::skip_existing, ec); //no encryption now maybe later
+		if (ec) {
+			cout << "Error: " << ec.message() << endl;
+			cout << "Error: " << "cannot perform the required action" << endl;
+			exit(EXIT_FAILURE);
+		}
+		cout << "File: " << _filePath << " staged successfully" << endl;
+		//TODO:
+		//add staged files to .dose/index
+		//show corr commit message if the file is up to date
+		//doseignore is not working
+	}
+}
+
+DoseIgnore::DoseIgnore() = default;
+DoseIgnore::DoseIgnore(const path & rootPath) {
+	const path ignoreFile = rootPath / ".doseIgnore";
+	if (exists(ignoreFile)) {
+		std::ifstream ignoreptr{ ignoreFile };
+		std::string _templine;
+		int i{};
+		while (std::getline(ignoreptr, _templine)) {
+			if (_templine.length() == 0) {
+				ignorePaths[i++] = _templine;
+			}
+		}
+	}
+}
+
+bool DoseIgnore::has(const path & path)const {
+	return pHas(path.string());
+}
+bool DoseIgnore::has(const std::string & path)const {
+	return pHas(path);
+}
+bool DoseIgnore::has(const char* path)const {
+	return pHas(std::string{ path });
+}
+
