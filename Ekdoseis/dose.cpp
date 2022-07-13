@@ -3,9 +3,9 @@
 #include<windows.h>//for fileapi.h
 #include<fileapi.h>
 #include"dose.h"
-#
 #define endl '\n'
 
+using namespace std::filesystem;
 using std::cout;
 Dose::Dose(int n, const char* ptr[]) :margc{ n }, margv{ ptr } {
 
@@ -111,17 +111,20 @@ Dose& Dose::add() {
 		std::ofstream _headptr{ mrootPath / ".dose/index" };
 		_headptr.close();
 	}
+	doseIgnore = DoseIgnore(mrootPath);//we only need it now
 	for (int i = 3; i < margc; i++) {
 		const path _filePath = mrootPath / margv[i];
 		//if(isFile)//todo
 		if (!exists(_filePath)) {
 			cout << "Error: " << _filePath.string() << " doesnot exists." << endl;
-			exit(EXIT_FAILURE);
+			continue;
+			//exit(EXIT_FAILURE);
 		}
-		doseIgnore = DoseIgnore(mrootPath);//we only need it now
 		if (doseIgnore.has(_filePath)) {
-			cout << "Error: " << *margv[i] << " already exists in the gitignore." << endl;
-			exit(EXIT_FAILURE);
+			cout << "Error: " <<margv[i] << " already exists in the gitignore." << endl;
+			continue;
+			//exit(EXIT_FAILURE);
+
 		}
 		//todo: cout to cerr
 		SHA1 fileSHA;
@@ -148,34 +151,36 @@ Dose& Dose::add() {
 		}
 		cout << "File: " << _filePath << " staged successfully" << endl;
 		//TODO:
-		//add staged files to .dose/index
+		//add staged files to .dose/index LINK:
 		//show corr commit message if the file is up to date
 		//doseignore is not working
 	}
 }
 
 DoseIgnore::DoseIgnore() = default;
-DoseIgnore::DoseIgnore(const path & rootPath) {
+DoseIgnore::DoseIgnore(const path & rootPath) 
+	:refToRootPath{ rootPath } {
 	const path ignoreFile = rootPath / ".doseIgnore";
 	if (exists(ignoreFile)) {
 		std::ifstream ignoreptr{ ignoreFile };
 		std::string _templine;
-		int i{};
+		size_t i{ 0 };
 		while (std::getline(ignoreptr, _templine)) {
-			if (_templine.length() == 0) {
-				ignorePaths[i++] = _templine;
+			if (_templine.length() != 0) {
+				//ignorePaths[i++] = _templine;
+				ignorePaths.push_back(_templine);
 			}
 		}
 	}
 }
 
 bool DoseIgnore::has(const path & path)const {
-	return pHas(path.string());
-}
-bool DoseIgnore::has(const std::string & path)const {
 	return pHas(path);
 }
-bool DoseIgnore::has(const char* path)const {
-	return pHas(std::string{ path });
+bool DoseIgnore::has(const std::string & pathstr)const {
+	return pHas(path{ pathstr });
+}
+bool DoseIgnore::has(const char* pathstr)const {
+	return pHas(path{ pathstr });
 }
 
