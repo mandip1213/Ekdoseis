@@ -4,6 +4,7 @@
 #include<string>
 
 #include "parser.h"
+#include "index.h"
 
 //using namespace std::filesystem;
 namespace fs = std::filesystem;
@@ -55,6 +56,7 @@ private:
 	const char** margv;
 	void errorExit();
 	DoseIgnore doseIgnore;
+	Index index;
 	std::vector<struct parser::Token> tokenList;
 	ReturnFlag createDirectory(const std::string_view& dirName, CreateFlag flags = NO_OVERRIDE);
 

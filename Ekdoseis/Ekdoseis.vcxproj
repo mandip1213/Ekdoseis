@@ -142,16 +142,20 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="dose.cpp" />
+    <ClCompile Include="index.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="parser.cpp" />
     <ClCompile Include="sha1.cpp" />
+    <ClCompile Include="utils.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="dose.h" />
     <ClInclude Include="parser.h" />
     <ClInclude Include="sha1.h" />
+    <ClInclude Include="utils.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="index.h" />
     <None Include="README.md" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

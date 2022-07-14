@@ -111,8 +111,12 @@ Dose& Dose::add() {
 		std::ofstream _headptr{ mrootPath / ".dose/index" };
 		_headptr.close();
 	}
-	doseIgnore = DoseIgnore(mrootPath);//we only need it now
 	for (int i = 3; i < margc; i++) {
+		if (i == 3) {
+			doseIgnore = DoseIgnore(mrootPath);//we only need it now
+			index = Index(mrootPath);
+
+		}
 		const path _filePath = mrootPath / margv[i];
 		//if(isFile)//todo
 		if (!exists(_filePath)) {
@@ -121,7 +125,7 @@ Dose& Dose::add() {
 			//exit(EXIT_FAILURE);
 		}
 		if (doseIgnore.has(_filePath)) {
-			cout << "Error: " <<margv[i] << " already exists in the gitignore." << endl;
+			cout << "Error: " << margv[i] << " already exists in the gitignore." << endl;
 			continue;
 			//exit(EXIT_FAILURE);
 
@@ -150,15 +154,17 @@ Dose& Dose::add() {
 			exit(EXIT_FAILURE);
 		}
 		cout << "File: " << _filePath << " staged successfully" << endl;
+		index.add(_filePath, hash);
+
 		//TODO:
 		//add staged files to .dose/index LINK:
-		//show corr commit message if the file is up to date
-		//doseignore is not working
+		//show corresponding commit message if the file is up to date
 	}
+	return *this;
 }
 
 DoseIgnore::DoseIgnore() = default;
-DoseIgnore::DoseIgnore(const path & rootPath) 
+DoseIgnore::DoseIgnore(const path & rootPath)
 	:refToRootPath{ rootPath } {
 	const path ignoreFile = rootPath / ".doseIgnore";
 	if (exists(ignoreFile)) {
