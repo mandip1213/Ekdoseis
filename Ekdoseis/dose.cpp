@@ -5,7 +5,6 @@
 #include"dose.h"
 #define endl '\n'
 
-using namespace std::filesystem;
 using std::cout;
 Dose::Dose(int n, const char* ptr[]) :margc{ n }, margv{ ptr } {
 
@@ -34,16 +33,19 @@ Dose& Dose::parseRootCommand() {
 	else if (strcmp(arg_cmd, "add") == 0) {
 		mcommand = ADD;
 	}
+	else if (strcmp(arg_cmd, "commit") == 0) {
+		mcommand = COMMIT;
+	}
 	else {
 		cout << "Error:" << *this << "doesnot exist" << endl;
 		exit(EXIT_FAILURE);
 	}
-	mrootPath = path{ arg_path };
+	mrootPath = fs::path{ arg_path };
 	return *this;
 }
 ReturnFlag Dose::createDirectory(const std::string_view& dirName, CreateFlag flags) {
-	path newDir = mrootPath / dirName;
-	if (exists(newDir)) {
+	fs::path newDir = mrootPath / dirName;
+	if (fs::exists(newDir)) {
 		if (flags == NO_OVERRIDE) {
 			return ALREADY_EXISTS;
 		}
@@ -102,6 +104,7 @@ Dose& Dose::execCommand() {
 	switch (mcommand) {
 	case INIT:init(); break;
 	case ADD:add(); break;
+	case COMMIT: commit(); break;
 	}
 	return *this;
 }
@@ -117,7 +120,7 @@ Dose& Dose::add() {
 			index = Index(mrootPath);
 
 		}
-		const path _filePath = mrootPath / margv[i];
+		const fs::path _filePath = mrootPath / margv[i];
 		//if(isFile)//todo
 		if (!exists(_filePath)) {
 			cout << "Error: " << _filePath.string() << " doesnot exists." << endl;
@@ -132,22 +135,22 @@ Dose& Dose::add() {
 		}
 		//todo: cout to cerr
 		SHA1 fileSHA;
-		const path objectPath = mrootPath / ".dose/objects";
+		const fs::path objectPath = mrootPath / ".dose/objects";
 		std::string hash{ fileSHA.from_file(_filePath.string()) };
 		size_t   hashLength{ hash.length() };//read: size_t
-		if (!hashLength == 40) {
+		if (!(hashLength == 40)) {
 			std::cerr << "Error: " << "Unwanted hash length" << endl;
 		}
-		const path hashDirPath = objectPath / hash.substr(0, 2);
+		const fs::path hashDirPath = objectPath / hash.substr(0, 2);
 		ReturnFlag _rf1 = createDirectory(hashDirPath.string());
 		if (!(_rf1 == CREATE_SUCCESS || _rf1 == ALREADY_EXISTS)) {
 			cout << "Error: " << "cannot perform the required action" << endl;
 			exit(EXIT_FAILURE);
 		}
-		const path _hashFilePath{ hashDirPath / hash.substr(2,hashLength - 2) };
+		const fs::path _hashFilePath{ hashDirPath / hash.substr(2,hashLength - 2) };
 		std::error_code ec;
 
-		copy_file(_filePath, _hashFilePath, copy_options::skip_existing, ec); //no encryption now maybe later
+		copy_file(_filePath, _hashFilePath, fs::copy_options::skip_existing, ec); //no encryption now maybe later
 		if (ec) {
 			cout << "Error: " << ec.message() << endl;
 			cout << "Error: " << "cannot perform the required action" << endl;
@@ -162,31 +165,7 @@ Dose& Dose::add() {
 	}
 	return *this;
 }
+Dose& Dose::commit() {
 
-DoseIgnore::DoseIgnore() = default;
-DoseIgnore::DoseIgnore(const path & rootPath)
-	:refToRootPath{ rootPath } {
-	const path ignoreFile = rootPath / ".doseIgnore";
-	if (exists(ignoreFile)) {
-		std::ifstream ignoreptr{ ignoreFile };
-		std::string _templine;
-		size_t i{ 0 };
-		while (std::getline(ignoreptr, _templine)) {
-			if (_templine.length() != 0) {
-				//ignorePaths[i++] = _templine;
-				ignorePaths.push_back(_templine);
-			}
-		}
-	}
+	return *this;
 }
-
-bool DoseIgnore::has(const path & path)const {
-	return pHas(path);
-}
-bool DoseIgnore::has(const std::string & pathstr)const {
-	return pHas(path{ pathstr });
-}
-bool DoseIgnore::has(const char* pathstr)const {
-	return pHas(path{ pathstr });
-}
-

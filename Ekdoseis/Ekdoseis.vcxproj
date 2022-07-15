@@ -141,17 +141,24 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="commit.cpp" />
     <ClCompile Include="dose.cpp" />
     <ClCompile Include="index.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="parser.cpp" />
     <ClCompile Include="sha1.cpp" />
+    <ClCompile Include="blob.cpp" />
+    <ClCompile Include="doseignore.cpp" />
     <ClCompile Include="utils.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="dose.h" />
+    <ClInclude Include="blob.h" />
+    <ClInclude Include="doseignore.h" />
+    <ClInclude Include="tree.cpp" />
     <ClInclude Include="parser.h" />
     <ClInclude Include="sha1.h" />
+    <ClInclude Include="tree.h" />
     <ClInclude Include="utils.h" />
   </ItemGroup>
   <ItemGroup>
