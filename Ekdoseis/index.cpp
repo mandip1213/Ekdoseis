@@ -16,7 +16,8 @@ void Index::fetchFromIndex() {
 	for (int i = 0; i < mtreeCount; i++) {
 		struct index::indexEntry curr;
 		readFromFile(indexiptr, curr);
-		mindexEntries.push_back(curr);
+		//mindexEntries.push_back(curr);
+		mindexEntries[i] = curr;
 	}
 }
 
@@ -29,8 +30,10 @@ index::FileStatus Index::getFileStatus(const fs::path& filePath) {
 			bool _temp = _stat(filePath.string().c_str(), &filestat);//do what with bool 
 			if (entry.modifiedTime == filestat.st_mtime) {
 				//TODO: check for staged or commited
+				if (static_cast<index::IndexFileStatus>(entry.flag) == index::IndexFileStatus::STAGED) {
+					return index::FileStatus::STAGED;
+				}
 				return index::FileStatus::COMMITTED;
-				return index::FileStatus::STAGED;
 			}
 			else {
 				//in index but modified date donot match
@@ -51,10 +54,24 @@ Index::Index(const fs::path & rootPath)
 	if (!exists(mindexPath)) {
 		std::ofstream _indexfptr{ mindexPath };
 	}
-
 }
 
 void Index::writeToFile(std::ofstream & fileoptr, const index::indexEntry & entry) {
+	for (auto entry:mindexEntries) {
+	fileoptr.flush();//debug
+		fileoptr << entry.createdTime << ' '
+			<< entry.modifiedTime << ' '
+			<< entry.sd_dev << ' '
+			<< entry.sd_ino << ' '
+			<< entry.mode << ' '
+			<< entry.sd_uid << ' '
+			<< entry.sd_gid << ' '
+			<< entry.flag << ' '
+			<< entry.sd_size << ' '
+			<< entry.sha1 << ' '
+			<< entry.fileName.c_str() << '\n';
+	fileoptr.flush();//debug
+	}
 	fileoptr << entry.createdTime << ' '
 		<< entry.modifiedTime << ' '
 		<< entry.sd_dev << ' '
@@ -62,9 +79,12 @@ void Index::writeToFile(std::ofstream & fileoptr, const index::indexEntry & entr
 		<< entry.mode << ' '
 		<< entry.sd_uid << ' '
 		<< entry.sd_gid << ' '
+		<< entry.flag << ' '
 		<< entry.sd_size << ' '
 		<< entry.sha1 << ' '
 		<< entry.fileName.c_str() << '\n';
+	++mtreeCount;
+	fileoptr.flush();//debug
 }
 
 void Index::readFromFile(std::ifstream & fileiptr, index::indexEntry & entry) {
@@ -76,6 +96,7 @@ void Index::readFromFile(std::ifstream & fileiptr, index::indexEntry & entry) {
 	fileiptr >> entry.mode;
 	fileiptr >> entry.sd_uid;
 	fileiptr >> entry.sd_gid;
+	fileiptr >> entry.flag;
 	fileiptr >> entry.sd_size;
 	fileiptr >> entry.sha1;
 	fileiptr >> entry.fileName;
@@ -83,11 +104,17 @@ void Index::readFromFile(std::ifstream & fileiptr, index::indexEntry & entry) {
 }
 
 bool Index::add(const fs::path & filePath, const std::string & hash) {
+	using enum index::FileStatus;
 	//latestFetch = true;
 	if (!latestFetch) {
 		fetchFromIndex();
 	}
+	index::FileStatus fileStatus = getFileStatus(filePath);
+	if (!(fileStatus == MODIFIED || fileStatus == UNTRACKED)) {
+		return true;//return file is uptodate(staged or committed)
+	}
 	std::ofstream indexfptr{ mindexPath };
+	cout << endl << indexfptr.tellp() << endl;
 	struct _stat stat;
 	bool _temp = _stat(filePath.string().c_str(), &stat);//_bool ?
 	std::error_code ec;
@@ -106,16 +133,20 @@ bool Index::add(const fs::path & filePath, const std::string & hash) {
 		.sd_uid = static_cast<unsigned  int>(stat.st_uid),
 		.sd_gid = static_cast<unsigned  int>(stat.st_gid),
 		.sd_size = static_cast<unsigned  int>(stat.st_size),
+		.flag = static_cast<int>(index::IndexFileStatus::STAGED),
 		.fileName = str
 	};
 	utils::toHexEncoding(hash, currEntry.sha1);
 
 	indexfptr << mtreeCount + 1 << '\n';
+	indexfptr.flush();//debug
 	writeToFile(indexfptr, currEntry);
 	//indexfptr.write((char*)&currEntry, sizeof(index::indexEntry));
+	indexfptr.close();
 	return true;
 }
 
 //TODO: work on getFileStatus function
 //TODO: work on git status function
+//TODO: work on git commit function
 //TODO: solve bug on hexa encoded hash string while reading from file  (may be use binary format

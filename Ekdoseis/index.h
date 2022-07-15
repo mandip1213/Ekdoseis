@@ -20,11 +20,15 @@ The index file consists of:
 
 */
 namespace index {
+	enum class IndexFileStatus {
+		COMMITTED = 1,// can be in index
+		STAGED = 2,//can be in index
+	};
 	enum class FileStatus {
-		COMMITTED,
+		COMMITTED ,// can be in index
+		STAGED ,//can be in index
 		MODIFIED,
 		UNTRACKED,
-		STAGED
 	};
 	/*	struct time {
 			uint32_t sec;
@@ -45,6 +49,7 @@ namespace index {
 		};
 	*/
 
+
 	struct indexEntry {
 		unsigned int createdTime;
 		unsigned int modifiedTime;
@@ -55,6 +60,7 @@ namespace index {
 		unsigned int sd_gid;//metadata
 		unsigned int sd_size;//filesize
 		unsigned char sha1[20];//what is signed and unsigned char 
+		unsigned int flag;
 		//unsigned char sha1[20];
 		//unsigned int ce_mode;
 		//unsigned int ce_flags;
@@ -62,6 +68,7 @@ namespace index {
 		//unsigned int index;	/* for link extension */
 		//char name[FLEX_ARRAY]; /* more */
 		std::string fileName;//variable length null terminated
+
 	};
 };
 class Index {
@@ -75,6 +82,7 @@ private:
 	void writeToFile(std::ofstream& fileptr, const index::indexEntry& entry);
 	void  readFromFile(std::ifstream& fileiptr, index::indexEntry& entry);
 	index::FileStatus getFileStatus(const fs::path& filePath);
+	
 
 public:
 	Index();
