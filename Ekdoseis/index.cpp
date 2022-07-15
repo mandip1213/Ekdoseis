@@ -57,8 +57,8 @@ Index::Index(const fs::path & rootPath)
 }
 
 void Index::writeToFile(std::ofstream & fileoptr, const index::indexEntry & entry) {
-	for (auto entry:mindexEntries) {
-	fileoptr.flush();//debug
+	for (auto entry : mindexEntries) {
+		fileoptr.flush();//debug
 		fileoptr << entry.createdTime << ' '
 			<< entry.modifiedTime << ' '
 			<< entry.sd_dev << ' '
@@ -70,7 +70,7 @@ void Index::writeToFile(std::ofstream & fileoptr, const index::indexEntry & entr
 			<< entry.sd_size << ' '
 			<< entry.sha1 << ' '
 			<< entry.fileName.c_str() << '\n';
-	fileoptr.flush();//debug
+		fileoptr.flush();//debug
 	}
 	fileoptr << entry.createdTime << ' '
 		<< entry.modifiedTime << ' '
@@ -98,6 +98,7 @@ void Index::readFromFile(std::ifstream & fileiptr, index::indexEntry & entry) {
 	fileiptr >> entry.sd_gid;
 	fileiptr >> entry.flag;
 	fileiptr >> entry.sd_size;
+	//fileiptr.get(static_cast<unsigned char*>(entry.sha1), 20);
 	fileiptr >> entry.sha1;
 	fileiptr >> entry.fileName;
 	//fileiptr.ignore(1);//new line
@@ -134,9 +135,11 @@ bool Index::add(const fs::path & filePath, const std::string & hash) {
 		.sd_gid = static_cast<unsigned  int>(stat.st_gid),
 		.sd_size = static_cast<unsigned  int>(stat.st_size),
 		.flag = static_cast<int>(index::IndexFileStatus::STAGED),
+		//.sha1 = hash.c_str(),
 		.fileName = str
 	};
-	utils::toHexEncoding(hash, currEntry.sha1);
+	strncpy_s(currEntry.sha1, hash.c_str(), 41);
+	//utils::toHexEncoding(hash, currEntry.sha1);
 
 	indexfptr << mtreeCount + 1 << '\n';
 	indexfptr.flush();//debug

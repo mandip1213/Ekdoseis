@@ -59,7 +59,7 @@ namespace index {
 		unsigned int sd_uid;//metadata
 		unsigned int sd_gid;//metadata
 		unsigned int sd_size;//filesize
-		unsigned char sha1[20];//what is signed and unsigned char 
+		 char sha1[41];//what is signed and unsigned char 
 		unsigned int flag;
 		//unsigned char sha1[20];
 		//unsigned int ce_mode;
@@ -88,6 +88,5 @@ public:
 	Index();
 	Index(const fs::path& rootPath);
 	bool add(const fs::path& filePath, const std::string& hash);
-
 };
 
