@@ -1,11 +1,11 @@
 #include "utils.h"
-
+#define endl '\n'
 
 int utils::getHex(char c) {
 	if (isdigit(c))return  c - '0';
 	else	if (c >= 'a' && c <= 'f')return  c - 'a' + 10;
 	else {
-		cout << "error: not a hex digit" << endl;
+		//cout << "error: not a hex digit" << endl;
 		return 0;
 	}
 }
@@ -27,8 +27,48 @@ void utils::toHexEncoding(std::string hash, unsigned char* ptr, int len) {
 }
 
 std::string utils::toAsciiEncoding(const std::string& hash) {
-	cout << hash.size() << endl;
-	cout << hash<<endl;
+	//cout << hash.size() << endl;
+	//cout << hash << endl;
 
 	return hash;
+}
+
+
+ReturnFlag utils::createObjectDir(const fs::path& newDir, CreateFlag flag) {
+	if (fs::exists(newDir)) {
+		if (flag == NO_OVERRIDE) {
+			return ALREADY_EXISTS;
+		}
+		else if (flag == OVERRIDE_IF_EXISTS) {
+			if (!fs::remove(newDir)) {
+				return OVERRIDE_FAILURE;
+			}//todo : create a new won now
+			return OVERRIDE_SUCCESS;
+		}
+	}
+	bool _success = fs::create_directory(newDir);
+	if (flag == NO_OVERRIDE) {
+		return (_success ? CREATE_SUCCESS : CREATE_SUCCESS);
+	}
+	else	if (flag == OVERRIDE_IF_EXISTS) {
+		return (_success ? OVERRIDE_SUCCESS : OVERRIDE_SUCCESS);
+	}
+	return CREATE_SUCCESS;
+
+}
+
+bool utils::validateHash(const std::string& hash) {
+	if (hash.length() != 40) {
+		std::cerr << "Invalid Hash" << endl;
+		exit(EXIT_FAILURE);
+		//return false;
+	}
+	for (const auto& curr : hash) {
+		if (!((curr >= 'a' && curr <= 'f') || isdigit(curr))) {
+			std::cerr << "Invalid Hash" << endl;
+			exit(EXIT_FAILURE);
+			//return false;
+		}
+	}
+	return true;
 }
