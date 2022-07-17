@@ -1,6 +1,7 @@
 #include "index.h"
 
 //namespace fs = std::filesystem;
+using std::cerr, std::cout;
 void Index::fetchFromIndex() {
 	if (fs::is_empty(mindexPath)) {
 		return;
@@ -56,7 +57,15 @@ Index::Index(const fs::path & rootPath)
 	}
 }
 
-void Index::writeToFile(std::ofstream & fileoptr, const index::indexEntry & entry) {
+void Index::writeToFile(const index::indexEntry * entry) {
+	//entry=nullptr(def val)
+	std::ofstream fileoptr{ mindexPath };
+	if (entry) {
+		fileoptr << ++mtreeCount << '\n';
+	}
+	else {
+		fileoptr << mtreeCount << '\n';
+	}
 	for (auto entry : mindexEntries) {
 		fileoptr.flush();//debug
 		fileoptr << entry.createdTime << ' '
@@ -72,18 +81,20 @@ void Index::writeToFile(std::ofstream & fileoptr, const index::indexEntry & entr
 			<< entry.fileName.c_str() << '\n';
 		fileoptr.flush();//debug
 	}
-	fileoptr << entry.createdTime << ' '
-		<< entry.modifiedTime << ' '
-		<< entry.sd_dev << ' '
-		<< entry.sd_ino << ' '
-		<< entry.mode << ' '
-		<< entry.sd_uid << ' '
-		<< entry.sd_gid << ' '
-		<< entry.flag << ' '
-		<< entry.sd_size << ' '
-		<< entry.sha1 << ' '
-		<< entry.fileName.c_str() << '\n';
-	++mtreeCount;
+	if (entry) {
+
+		fileoptr << entry->createdTime << ' '
+			<< entry->modifiedTime << ' '
+			<< entry->sd_dev << ' '
+			<< entry->sd_ino << ' '
+			<< entry->mode << ' '
+			<< entry->sd_uid << ' '
+			<< entry->sd_gid << ' '
+			<< entry->flag << ' '
+			<< entry->sd_size << ' '
+			<< entry->sha1 << ' '
+			<< entry->fileName.c_str() << '\n';
+	}
 	fileoptr.flush();//debug
 }
 
@@ -114,8 +125,6 @@ bool Index::add(const fs::path & filePath, const std::string & hash) {
 	if (!(fileStatus == MODIFIED || fileStatus == UNTRACKED)) {
 		return true;//return file is uptodate(staged or committed)
 	}
-	std::ofstream indexfptr{ mindexPath };
-	cout << endl << indexfptr.tellp() << endl;
 	struct _stat stat;
 	bool _temp = _stat(filePath.string().c_str(), &stat);//_bool ?
 	std::error_code ec;
@@ -134,18 +143,16 @@ bool Index::add(const fs::path & filePath, const std::string & hash) {
 		.sd_uid = static_cast<unsigned  int>(stat.st_uid),
 		.sd_gid = static_cast<unsigned  int>(stat.st_gid),
 		.sd_size = static_cast<unsigned  int>(stat.st_size),
-		.flag = static_cast<int>(index::IndexFileStatus::STAGED),
+		.sha1 = hash,
+		.flag = static_cast<unsigned int>(index::IndexFileStatus::STAGED),
 		//.sha1 = hash.c_str(),
 		.fileName = str
 	};
-	strncpy_s(currEntry.sha1, hash.c_str(), 41);
 	//utils::toHexEncoding(hash, currEntry.sha1);
 
-	indexfptr << mtreeCount + 1 << '\n';
-	indexfptr.flush();//debug
-	writeToFile(indexfptr, currEntry);
+	writeToFile(&currEntry);
 	//indexfptr.write((char*)&currEntry, sizeof(index::indexEntry));
-	indexfptr.close();
+	//indexfptr.close();
 	return true;
 }
 

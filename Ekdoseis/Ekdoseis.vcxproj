@@ -149,13 +149,15 @@
     <ClCompile Include="sha1.cpp" />
     <ClCompile Include="blob.cpp" />
     <ClCompile Include="doseignore.cpp" />
+    <ClCompile Include="tree.cpp" />
     <ClCompile Include="utils.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="dose.h" />
     <ClInclude Include="blob.h" />
     <ClInclude Include="doseignore.h" />
-    <ClInclude Include="tree.cpp" />
+    <ClInclude Include="enums.h" />
+    <ClInclude Include="hash.h" />
     <ClInclude Include="parser.h" />
     <ClInclude Include="sha1.h" />
     <ClInclude Include="tree.h" />

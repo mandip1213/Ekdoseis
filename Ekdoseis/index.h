@@ -7,6 +7,7 @@
 #include<sys/stat.h>
 #include<iostream>
 #include"utils.h"
+#include"commit.h"
 #define endl '\n'
 
 namespace fs = std::filesystem;
@@ -25,8 +26,8 @@ namespace index {
 		STAGED = 2,//can be in index
 	};
 	enum class FileStatus {
-		COMMITTED ,// can be in index
-		STAGED ,//can be in index
+		COMMITTED,// can be in index
+		STAGED,//can be in index
 		MODIFIED,
 		UNTRACKED,
 	};
@@ -59,7 +60,7 @@ namespace index {
 		unsigned int sd_uid;//metadata
 		unsigned int sd_gid;//metadata
 		unsigned int sd_size;//filesize
-		 char sha1[41];//what is signed and unsigned char 
+		std::string   sha1;//what is signed and unsigned char 
 		unsigned int flag;
 		//unsigned char sha1[20];
 		//unsigned int ce_mode;
@@ -79,14 +80,14 @@ private:
 	std::vector<index::indexEntry> mindexEntries;
 	bool latestFetch{ false };
 	void fetchFromIndex();
-	void writeToFile(std::ofstream& fileptr, const index::indexEntry& entry);
+	void writeToFile(const index::indexEntry* entry = nullptr);
 	void  readFromFile(std::ifstream& fileiptr, index::indexEntry& entry);
 	index::FileStatus getFileStatus(const fs::path& filePath);
-	
-
 public:
 	Index();
 	Index(const fs::path& rootPath);
 	bool add(const fs::path& filePath, const std::string& hash);
+	friend void Commit::createTree();
 };
+
 
