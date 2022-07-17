@@ -2,42 +2,24 @@
 #include<filesystem>
 #include<string_view>
 #include<string>
-
-#include "parser.h"
 #include "index.h"
+#include "parser.h"
 #include "doseignore.h"
+#include "enums.h"
 
 //using namespace std::filesystem;
 namespace fs = std::filesystem;
 //using namespace filesystem;
 
-enum ReturnFlag {
-	CREATE_SUCCESS,
-	CREATE_FAILURE,
-	ALREADY_EXISTS,
-	OVERRIDE_FAILURE,
-	OVERRIDE_SUCCESS,
-};
-enum CreateFlag {
-	NO_OVERRIDE,//default
-	OVERRIDE_IF_EXISTS,
-};
-enum DoseCommand {
-	INIT,
-	ADD,
-	COMMIT,
-	NOCOMMAND,
-
-};
 class Dose {
-private:
+	private:
 	fs::path mrootPath;
 	DoseCommand mcommand;
 	int margc;
 	const char** margv;
 	void errorExit();
 	DoseIgnore doseIgnore;
-	Index index;
+	Index mindex;
 	std::vector<struct parser::Token> tokenList;
 	ReturnFlag createDirectory(const std::string_view& dirName, CreateFlag flags = NO_OVERRIDE);
 
@@ -53,5 +35,4 @@ public:
 	Dose& add();
 	Dose& commit();
 	friend	void parseCommand(int argc, char* argv[], std::vector<struct Token> tokenList);
-
 };

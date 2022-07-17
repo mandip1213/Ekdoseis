@@ -3,6 +3,7 @@
 #include<windows.h>//for fileapi.h
 #include<fileapi.h>
 #include"dose.h"
+#include"commit.h"
 #define endl '\n'
 
 using std::cout;
@@ -18,15 +19,7 @@ std::ostream& operator<<(std::ostream& out, const Dose& dose) {
 Dose& Dose::parseRootCommand() {
 	const char* arg_path = margv[1];
 	const char* arg_cmd = margv[2];
-	/*
-	for (int i = 3; i < margc; i++) {
-		if (strncmp(margv[i], "-", 1) == 0) {
-			if (i == 3)cout << endl << "options: ";
-			cout << margv[i];
-		}
-	}
-	cout << endl;
-	*/
+	mrootPath = fs::path{ arg_path };
 	if (strcmp(arg_cmd, "init") == 0) {
 		mcommand = INIT;
 	}
@@ -40,11 +33,11 @@ Dose& Dose::parseRootCommand() {
 		cout << "Error:" << *this << "doesnot exist" << endl;
 		exit(EXIT_FAILURE);
 	}
-	mrootPath = fs::path{ arg_path };
+	fs::current_path(arg_path);//change current path to arg_path
 	return *this;
 }
 ReturnFlag Dose::createDirectory(const std::string_view& dirName, CreateFlag flags) {
-	fs::path newDir = mrootPath / dirName;
+	fs::path newDir = mrootPath / dirName;//bug?
 	if (fs::exists(newDir)) {
 		if (flags == NO_OVERRIDE) {
 			return ALREADY_EXISTS;
@@ -52,8 +45,7 @@ ReturnFlag Dose::createDirectory(const std::string_view& dirName, CreateFlag fla
 		else if (flags == OVERRIDE_IF_EXISTS) {
 			if (!remove(newDir)) {
 				return OVERRIDE_FAILURE;
-			}//todo : create a new won now
-			return OVERRIDE_SUCCESS;
+			}
 		}
 	}
 	bool _success = create_directory(newDir);
@@ -93,7 +85,7 @@ Dose& Dose::init() {
 	if (!(_headf))errorExit();
 	std::ofstream headptr{ mrootPath / ".dose/HEAD" };
 	if (!headptr)errorExit();
-	headptr << "refs/heads/main" << endl;
+	headptr << "ref: refs/heads/main" << endl;
 	_headf.close();
 	headptr.close();
 	cout << "Successfully Initialized empty repo in" << *this << endl;
@@ -117,8 +109,7 @@ Dose& Dose::add() {
 	for (int i = 3; i < margc; i++) {
 		if (i == 3) {
 			doseIgnore = DoseIgnore(mrootPath);//we only need it now
-			index = Index(mrootPath);
-
+			mindex = Index(mrootPath);
 		}
 		const fs::path _filePath = mrootPath / margv[i];
 		//if(isFile)//todo
@@ -128,7 +119,7 @@ Dose& Dose::add() {
 			//exit(EXIT_FAILURE);
 		}
 		if (doseIgnore.has(_filePath)) {
-			cout << "Error: " << margv[i] << " already exists in the gitignore." << endl;
+			cout << "Error: " << margv[i] << " already exists in the doseignore." << endl;
 			continue;
 			//exit(EXIT_FAILURE);
 
@@ -157,15 +148,23 @@ Dose& Dose::add() {
 			exit(EXIT_FAILURE);
 		}
 		cout << "File: " << _filePath << " staged successfully" << endl;
-		index.add(_filePath, hash);
+		mindex.add(_filePath, hash);
 
-		//TODO:
-		//add staged files to .dose/index LINK:
-		//show corresponding commit message if the file is up to date
 	}
 	return *this;
 }
 Dose& Dose::commit() {
+	Commit commit{ mrootPath };
+	commit.createTree();
+	commit.fetchParentHash();
+	commit.createCommit();
+	//	commit.compareTreeHash();//todo: instead of this  check the flag of every file of index
 
+	std::error_code ec;
 	return *this;
 }
+
+//TODO:
+//show corresponding commit message if the file is up to date
+
+
