@@ -62,12 +62,6 @@ namespace index {
 		unsigned int sd_size;//filesize
 		std::string   sha1;//what is signed and unsigned char 
 		unsigned int flag;
-		//unsigned char sha1[20];
-		//unsigned int ce_mode;
-		//unsigned int ce_flags;
-		//unsigned int ce_namelen;
-		//unsigned int index;	/* for link extension */
-		//char name[FLEX_ARRAY]; /* more */
 		std::string fileName;//variable length null terminated
 
 	};
@@ -81,12 +75,13 @@ private:
 	bool latestFetch{ false };
 	void fetchFromIndex();
 	void writeToFile(const index::indexEntry* entry = nullptr);
-	void  readFromFile(std::ifstream& fileiptr, index::indexEntry& entry);
-	index::FileStatus getFileStatus(const fs::path& filePath);
+	void readFromFile(std::ifstream& fileiptr, index::indexEntry& entry);
+	index::FileStatus getFileStatus(const fs::path& filePath, bool upDateIndex = false);
 public:
 	Index();
 	Index(const fs::path& rootPath);
 	bool add(const fs::path& filePath, const std::string& hash);
+	bool hasFileChanged(const fs::path& filepath);
 	friend void Commit::createTree();
 };
 

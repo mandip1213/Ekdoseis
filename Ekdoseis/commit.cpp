@@ -19,7 +19,7 @@ void Commit::compareTreeHash() {
 	const std::string currHash{ mtree.getHash() };
 	std::string prevHash;
 	fs::path prevPath{ mrootPath / ".dose/objects" / mparentHash.substr(0,2) / mparentHash.substr(2,40 - 2) };
-	std::ifstream prevCommit{prevPath};
+	std::ifstream prevCommit{ prevPath };
 	prevCommit >> prevHash;//"tree"
 	prevCommit >> prevHash;//tree hash
 	if (currHash.compare(prevHash) == 0) {
@@ -40,7 +40,7 @@ void Commit::createCommit() {
 
 	SHA1 hash;
 	hash.update(streambuf);
-	std::string mhash = hash.final();
+	mhash = hash.final();
 
 	fs::path commitObj{ fs::current_path() / ".dose/objects" / mhash.substr(0,2) };
 	ReturnFlag _rf = utils::createObjectDir(commitObj);
@@ -58,6 +58,7 @@ void Commit::createCommit() {
 	}
 	updateLogs();
 	updateHead();
+	//TODO: update Index -> the flag
 }
 void Commit::createLogFiles() {
 	ReturnFlag _rf = utils::createObjectDir(mrootPath / ".dose/logs");
@@ -117,10 +118,7 @@ void Commit::fetchParentHash() {
 	std::istringstream sstream{ line };
 	sstream >> mparentHash;//parent of parent hash
 	sstream >> mparentHash;///required parent 
-	if (!utils::validateHash(mparentHash)) {
-		std::cerr << "Invalid Hash" << endl;
-		exit(EXIT_FAILURE);
-	}
+	utils::validateHash(mparentHash);
 }
 void tempexit() {
 	cerr << "Error: cannot update llogs" << endl;

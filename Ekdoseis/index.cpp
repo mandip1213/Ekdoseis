@@ -22,9 +22,9 @@ void Index::fetchFromIndex() {
 	}
 }
 
-index::FileStatus Index::getFileStatus(const fs::path& filePath) {
+index::FileStatus Index::getFileStatus(const fs::path& filePath, bool updateIndex) {
 	std::error_code ec;
-	for (struct index::indexEntry entry : mindexEntries) {
+	for (auto& entry : mindexEntries) {
 		if (fs::equivalent(mrefToRootPath / entry.fileName, filePath, ec)) {
 			//file exists in index file
 			struct _stat filestat;
@@ -38,6 +38,11 @@ index::FileStatus Index::getFileStatus(const fs::path& filePath) {
 			}
 			else {
 				//in index but modified date donot match
+				//so file is changed
+				//and hence change the modifed date index too and update the index
+				if (updateIndex == true) {
+					entry.modifiedTime = filestat.st_mtime;
+				}
 				return  index::FileStatus::MODIFIED;
 			}
 		}
@@ -54,7 +59,11 @@ Index::Index(const fs::path & rootPath)
 	mindexPath{ rootPath / ".dose/index" }{
 	if (!exists(mindexPath)) {
 		std::ofstream _indexfptr{ mindexPath };
+	}	if (!latestFetch) {
+		fetchFromIndex();
+		latestFetch = true;
 	}
+
 }
 
 void Index::writeToFile(const index::indexEntry * entry) {
@@ -120,10 +129,21 @@ bool Index::add(const fs::path & filePath, const std::string & hash) {
 	//latestFetch = true;
 	if (!latestFetch) {
 		fetchFromIndex();
+		latestFetch = true;
 	}
-	index::FileStatus fileStatus = getFileStatus(filePath);
-	if (!(fileStatus == MODIFIED || fileStatus == UNTRACKED)) {
-		return true;//return file is uptodate(staged or committed)
+	index::FileStatus fileStatus = getFileStatus(filePath, true);
+	if (fileStatus == MODIFIED) {
+		//The modiifeid date inindex entries is updated
+		writeToFile();
+		return true ;
+	}
+	if (fileStatus == COMMITTED) {
+		cout << "nothing to add in file " << filePath << endl;
+		return false;
+	}
+	if (fileStatus == STAGED ) {
+		cout << "file: " << filePath << " is already staged" << endl;
+		return false;
 	}
 	struct _stat stat;
 	bool _temp = _stat(filePath.string().c_str(), &stat);//_bool ?
@@ -131,7 +151,8 @@ bool Index::add(const fs::path & filePath, const std::string & hash) {
 	fs::path relativePath = fs::relative(filePath, mrefToRootPath, ec);
 	if (ec) {
 		std::cerr << "Error: cannot stage " << filePath.string() << endl;
-		return false;
+		exit(EXIT_FAILURE);
+		return false ;
 	}
 	std::string str = relativePath.string();
 	index::indexEntry currEntry = {
@@ -150,11 +171,27 @@ bool Index::add(const fs::path & filePath, const std::string & hash) {
 	};
 	//utils::toHexEncoding(hash, currEntry.sha1);
 
+	mindexEntries.push_back(currEntry);
 	writeToFile(&currEntry);
 	//indexfptr.write((char*)&currEntry, sizeof(index::indexEntry));
 	//indexfptr.close();
 	return true;
 }
+
+bool Index::hasFileChanged(const fs::path & filepath) {
+	for (const auto& entry : mindexEntries) {
+		if (fs::equivalent(filepath, mrefToRootPath / entry.fileName)) {
+			struct _stat stat;
+			bool _temp = _stat(entry.fileName.c_str(), &stat);
+			if (stat.st_mtime == entry.modifiedTime) {
+				return false;
+			}
+			return true;
+		}
+	}
+	return false;
+}
+
 
 //TODO: work on getFileStatus function
 //TODO: work on git status function

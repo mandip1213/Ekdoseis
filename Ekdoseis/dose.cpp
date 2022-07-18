@@ -106,6 +106,7 @@ Dose& Dose::add() {
 		std::ofstream _headptr{ mrootPath / ".dose/index" };
 		_headptr.close();
 	}
+
 	for (int i = 3; i < margc; i++) {
 		if (i == 3) {
 			doseIgnore = DoseIgnore(mrootPath);//we only need it now
@@ -124,7 +125,12 @@ Dose& Dose::add() {
 			//exit(EXIT_FAILURE);
 
 		}
+		/*if (!mindex.hasFileChanged(_filePath)) {
+			cout << "file: " << _filePath << " is upto date" << endl;
+			continue;
+		}*/
 		//todo: cout to cerr
+
 		SHA1 fileSHA;
 		const fs::path objectPath = mrootPath / ".dose/objects";
 		std::string hash{ fileSHA.from_file(_filePath.string()) };
@@ -132,12 +138,15 @@ Dose& Dose::add() {
 		if (!(hashLength == 40)) {
 			std::cerr << "Error: " << "Unwanted hash length" << endl;
 		}
+
 		const fs::path hashDirPath = objectPath / hash.substr(0, 2);
 		ReturnFlag _rf1 = createDirectory(hashDirPath.string());
 		if (!(_rf1 == CREATE_SUCCESS || _rf1 == ALREADY_EXISTS)) {
 			cout << "Error: " << "cannot perform the required action" << endl;
 			exit(EXIT_FAILURE);
 		}
+
+
 		const fs::path _hashFilePath{ hashDirPath / hash.substr(2,hashLength - 2) };
 		std::error_code ec;
 
@@ -147,8 +156,10 @@ Dose& Dose::add() {
 			cout << "Error: " << "cannot perform the required action" << endl;
 			exit(EXIT_FAILURE);
 		}
-		cout << "File: " << _filePath << " staged successfully" << endl;
-		mindex.add(_filePath, hash);
+		bool badd = mindex.add(_filePath, hash);
+		if (badd) {
+			cout << "File: " << _filePath << " staged successfully" << endl;
+		}
 
 	}
 	return *this;
@@ -159,7 +170,6 @@ Dose& Dose::commit() {
 	commit.fetchParentHash();
 	commit.createCommit();
 	//	commit.compareTreeHash();//todo: instead of this  check the flag of every file of index
-
 	std::error_code ec;
 	return *this;
 }
