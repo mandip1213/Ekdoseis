@@ -76,11 +76,11 @@ private:
 	void fetchFromIndex();
 	void writeToFile(const index::indexEntry* entry = nullptr);
 	void readFromFile(std::ifstream& fileiptr, index::indexEntry& entry);
-	index::FileStatus getFileStatus(const fs::path& filePath, bool upDateIndex = false);
 public:
 	Index();
 	Index(const fs::path& rootPath);
 	bool add(const fs::path& filePath, const std::string& hash);
+	index::FileStatus getFileStatus(const fs::path& filePath, bool upDateIndex = false);
 	bool hasFileChanged(const fs::path& filepath);
 	friend void Commit::createTree();
 };

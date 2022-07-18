@@ -1,4 +1,4 @@
-#include<iostream>
+﻿#include<iostream>
 #include<fstream>
 #include<windows.h>//for fileapi.h
 #include<fileapi.h>
@@ -29,11 +29,27 @@ Dose& Dose::parseRootCommand() {
 	else if (strcmp(arg_cmd, "commit") == 0) {
 		mcommand = COMMIT;
 	}
+	else if (strcmp(arg_cmd, "status") == 0) {
+		mcommand = STATUS;
+	}
+	else if (strcmp(arg_cmd, "log") == 0) {
+		mcommand = LOG;
+	}
 	else {
 		cout << "Error:" << *this << "doesnot exist" << endl;
 		exit(EXIT_FAILURE);
 	}
 	fs::current_path(arg_path);//change current path to arg_path
+	return *this;
+}
+Dose& Dose::execCommand() {
+	switch (mcommand) {
+	case INIT:init(); break;
+	case ADD:add(); break;
+	case COMMIT: commit(); break;
+	case STATUS: status(); break;
+	case LOG: log(); break;
+	}
 	return *this;
 }
 ReturnFlag Dose::createDirectory(const std::string_view& dirName, CreateFlag flags) {
@@ -90,14 +106,6 @@ Dose& Dose::init() {
 	headptr.close();
 	cout << "Successfully Initialized empty repo in" << *this << endl;
 
-	return *this;
-}
-Dose& Dose::execCommand() {
-	switch (mcommand) {
-	case INIT:init(); break;
-	case ADD:add(); break;
-	case COMMIT: commit(); break;
-	}
 	return *this;
 }
 Dose& Dose::add() {
@@ -173,8 +181,93 @@ Dose& Dose::commit() {
 	std::error_code ec;
 	return *this;
 }
+Dose& Dose::status() {
+	using iterator = fs::recursive_directory_iterator;
+	//for (auto& curr : fs::recursive_directory_iterator(p)) {
+		//cout << curr << endl;
+	//}
+	doseIgnore = DoseIgnore(mrootPath);//we only need it now
+	mindex = Index(mrootPath);
+	std::vector<fs::path> modified;
+	std::vector<fs::path>untracked;
+	std::string symbol("|___");
+	for (iterator i = fs::recursive_directory_iterator(mrootPath);
+		i != fs::recursive_directory_iterator();
+		++i) {
+		if (doseIgnore.has(i->path())) {
+			i.disable_recursion_pending();
+			continue;
+		}
+		if (fs::equivalent(i->path(), mrootPath / ".dose")) {
+			//cout << "Dose found" << endl;
+			i.disable_recursion_pending();
+		}
+		if (fs::equivalent(i->path(), mrootPath / ".git")) {
+			//cout << "Dose found" << endl;
+			i.disable_recursion_pending();
+		}
+		fs::path p{ i->path() };
+
+		using namespace index;
+		index::FileStatus status = mindex.getFileStatus(i->path());
+		if (status == FileStatus::STAGED) {
+		}
+		if (status == FileStatus::UNTRACKED) {
+			untracked.push_back(i->path());
+		}
+		if (status == FileStatus::MODIFIED) {
+			untracked.push_back(i->path());
+		};
+
+		if (i.depth() != 0) {
+			std::cout << std::string((i.depth() - 1) * 4, ' ');
+			std::cout << symbol;
+		}
+		std::cout << i->path().filename() << "    " << endl;
+		//cout << i->path()<<endl;
+	}
+	cout << endl << endl;
+	cout << "modified: " << endl;
+	for (auto it : modified) {
+		std::cout << it.filename() << "    " << endl;
+	}
+	cout << endl << endl;
+	cout << "untracked: " << endl;
+	for (auto it : untracked) {
+		std::cout << it.filename() << "    " << endl;
+	}
+	return *this;
+}
+Dose& Dose::log() {
+	cout << "Logging: " << endl;
+
+	std::ifstream logFile{ mrootPath / ".dose/logs/refs/main" };
+	if (!logFile) {
+		cout << "NO logs";
+		return *this;
+	}
+
+	std::string line;
+	std::string hash,author,message;
+	uint64_t time;//time are stroed in 
+	while (std::getline(logFile, line)) {
+		std::istringstream stream{ line };
+		stream.ignore(41, ' ');
+		stream >> hash >>time >>  author >> message;
+		cout << "Commit\t" << hash<<endl;
+		cout << "Author:\t" << author << endl;
+		cout << "Date: ";
+		utils::printDate(time);
+		cout << endl;
+		cout << "Message:\t" << message << endl;
+	}
+	return *this;
+}
 
 //TODO:
 //show corresponding commit message if the file is up to date
+//`dose add` doesnot work for directly adding directory
+//add feature of adding commit message to `dose commit` 
+//bug: last file is inicluded twice
 
 

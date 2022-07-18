@@ -34,5 +34,7 @@ public:
 	Dose& init();
 	Dose& add();
 	Dose& commit();
+	Dose& status();
+	Dose& log();
 	friend	void parseCommand(int argc, char* argv[], std::vector<struct Token> tokenList);
 };

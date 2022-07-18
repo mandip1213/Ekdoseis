@@ -15,6 +15,8 @@ enum DoseCommand {
 	INIT,
 	ADD,
 	COMMIT,
+	STATUS,
+	LOG,
 	NOCOMMAND,
 
 };
