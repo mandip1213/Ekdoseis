@@ -1,3 +1,5 @@
+#include<chrono>
+#include<ctime>
 #include "utils.h"
 #define endl '\n'
 
@@ -72,3 +74,25 @@ bool utils::validateHash(const std::string& hash) {
 	}
 	return true;
 }
+
+uint64_t utils::getTime() {
+	using namespace std::chrono;
+	uint64_t ms = duration_cast<seconds>(
+		system_clock::now().time_since_epoch()).count();
+
+	std::cout << "ms  " << ms << endl;
+	return ms;
+}
+
+void utils::printDate(uint64_t time) {
+	//auto currTime = std::chrono::system_clock::now();
+	//const std::time_t t_c = std::chrono::system_clock::to_time_t(currTime);
+	const std::time_t t_c{ static_cast<long long>(time) };
+	std::tm t;
+	//gmtime_s(&t, &t_c); for gmtime
+	localtime_s(&t, &t_c);
+	//LINK:https://en.cppreference.com/w/cpp/io/manip/put_time
+	std::cout << std::put_time(&t, "%a %b %d %Y %H:%M:%S %z %Z");
+
+}
+

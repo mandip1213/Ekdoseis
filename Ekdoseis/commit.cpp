@@ -1,4 +1,5 @@
 #include<iostream>
+#include<chrono>
 #include"commit.h"
 #include"index.h"
 #include"tree.h"
@@ -23,6 +24,7 @@ void Commit::compareTreeHash() {
 	prevCommit >> prevHash;//"tree"
 	prevCommit >> prevHash;//tree hash
 	if (currHash.compare(prevHash) == 0) {
+		//bug: this runs when already tracked files are committed
 		cout << "Nothinig to commit" << endl;
 		cout << "Please add files before committing" << endl;
 		exit(EXIT_SUCCESS);
@@ -120,6 +122,7 @@ void Commit::fetchParentHash() {
 	sstream >> mparentHash;///required parent 
 	utils::validateHash(mparentHash);
 }
+
 void tempexit() {
 	cerr << "Error: cannot update llogs" << endl;
 	exit(EXIT_FAILURE);
@@ -131,7 +134,10 @@ void Commit::updateLogs() {
 		cerr << "Error: couldnot open log files" << endl;
 		tempexit();
 	}
-	logFile << mparentHash << " " << mhash << " " << "time author message" << endl;//add time, author and message
-
+	auto currTime = std::chrono::system_clock::now();
+	cout << "returned ms " << utils::getTime()<<" --" << endl;
+	uint64_t  time = utils::getTime();
+	logFile << mparentHash << " " << mhash << " " << utils::getTime() << " author message" << endl;//add time, author and message
 }
+
 

@@ -16,5 +16,7 @@ namespace utils {
 	ReturnFlag createObjectDir(const fs::path& newDir, CreateFlag flag = CreateFlag::NO_OVERRIDE);
 
 	bool validateHash(const std::string& hash);
+	uint64_t getTime();
+	void printDate(uint64_t time);
 }
 
