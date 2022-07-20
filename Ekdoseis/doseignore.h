@@ -1,4 +1,6 @@
 #pragma once
+#ifndef DOSEIGNORE_H
+#define DOSEIGNORE_H
 #include<vector>
 #include<filesystem>
 namespace fs = std::filesystem;
@@ -23,3 +25,4 @@ public:
 	bool has(const std::string& path)const;
 	bool has(const char* path)const;
 };
+#endif

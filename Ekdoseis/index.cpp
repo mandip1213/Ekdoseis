@@ -59,9 +59,6 @@ Index::Index(const fs::path & rootPath)
 	mindexPath{ rootPath / ".dose/index" }{
 	if (!exists(mindexPath)) {
 		std::ofstream _indexfptr{ mindexPath };
-	}	if (!latestFetch) {
-		fetchFromIndex();
-		latestFetch = true;
 	}
 
 }
@@ -76,7 +73,6 @@ void Index::writeToFile(const index::indexEntry * entry) {
 		fileoptr << mtreeCount << '\n';
 	}
 	for (auto entry : mindexEntries) {
-		fileoptr.flush();//debug
 		fileoptr << entry.createdTime << ' '
 			<< entry.modifiedTime << ' '
 			<< entry.sd_dev << ' '
@@ -88,7 +84,6 @@ void Index::writeToFile(const index::indexEntry * entry) {
 			<< entry.sd_size << ' '
 			<< entry.sha1 << ' '
 			<< entry.fileName.c_str() << '\n';
-		fileoptr.flush();//debug
 	}
 	if (entry) {
 
@@ -104,7 +99,6 @@ void Index::writeToFile(const index::indexEntry * entry) {
 			<< entry->sha1 << ' '
 			<< entry->fileName.c_str() << '\n';
 	}
-	fileoptr.flush();//debug
 }
 
 void Index::readFromFile(std::ifstream & fileiptr, index::indexEntry & entry) {
@@ -127,10 +121,6 @@ void Index::readFromFile(std::ifstream & fileiptr, index::indexEntry & entry) {
 bool Index::add(const fs::path & filePath, const std::string & hash) {
 	using enum index::FileStatus;
 	//latestFetch = true;
-	if (!latestFetch) {
-		fetchFromIndex();
-		latestFetch = true;
-	}
 	index::FileStatus fileStatus = getFileStatus(filePath, true);
 	if (fileStatus == MODIFIED) {
 		//The modiifeid date inindex entries is updated

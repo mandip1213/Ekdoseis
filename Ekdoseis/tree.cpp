@@ -2,14 +2,16 @@
 #include<sstream>
 #include<fstream>
 #include"tree.h"
+#include"index.h"
 #include"blob.h"
 #include"sha1.h"
 #include"utils.h"
 using std::cout;
 #define endl '\n'
 
-Tree::Tree(const std::string& name) :myName{ name } {
-
+Tree::Tree(const std::string& name, const std::string& hash)
+	: myName{ name }, mhash{ hash }
+{
 }
 bool Tree::insertBlob(const std::string& hash, const fs::path& pathname) {
 
@@ -65,7 +67,7 @@ void Tree::createTreeObjects() {
 		streambuf << 100644 << " " << "blob" << " " << currBlob.getHash() << " " << currBlob.getName() << '\n';
 	}
 	for (auto& currTree : mtrees) {
-		streambuf << 100644 << " " << "tree" << " " << currTree.myName << " " << currTree.mhash << '\n';
+		streambuf << 100644 << " " << "tree" << " " << currTree.mhash << " " << currTree.myName << '\n';
 	}
 	streambuf.seekg(0, std::ios::beg);//imp: setting the pointer to start 
 	SHA1 hash;
@@ -82,7 +84,56 @@ void Tree::createTreeObjects() {
 	//ofptr << streambuf.rdbuf();
 	ofptr << streambuf.str();
 	ofptr.close();
+}
+
+void Tree::createTreeFromObject() {
+	const fs::path treeObj{ fs::current_path() / ".dose/objects" / mhash.substr(0,2) / mhash.substr(2,40 - 2) };
+	std::ifstream treeiptr{ treeObj };
+	std::string line;
+	std::string permissions;//later
+	std::string type;
+	std::string name;
+	std::string hash;
+	while (std::getline(treeiptr, line)) {
+		std::stringstream stream{ line };
+		stream >> permissions >> type >> hash >> name;
+		if (type.compare("blob") == 0) {
+			this->mblobs.push_back(Blob{ hash,name });
+		}
+		else if (type.compare("tree") == 0) {
+			Tree tempTree{ name,hash };
+			tempTree.createTreeFromObject();
+			this->mtrees.push_back(tempTree);
+		}
+	}
+}
+
+void Tree::createNewIndex(Index& ii) {
+	fs::path currPath = fs::current_path();
+	for (auto& currBlob : mblobs) {
+		fs::path filePath = fs::current_path() / currPath / filePath;
+		struct _stat stat;
+		bool _temp = _stat(filePath.string().c_str(), &stat);//_bool ?
+		index::indexEntry currEntry = {
+			.createdTime = static_cast<unsigned int>(stat.st_ctime),
+			.modifiedTime = static_cast<unsigned int>(stat.st_mtime),
+			.sd_dev = stat.st_dev,
+			.sd_ino = stat.st_ino,
+			.mode = stat.st_mode,
+			.sd_uid = static_cast<unsigned  int>(stat.st_uid),
+			.sd_gid = static_cast<unsigned  int>(stat.st_gid),
+			.sd_size = static_cast<unsigned  int>(stat.st_size),
+			.sha1 = currBlob.getHash(),
+			.flag = static_cast<unsigned int>(index::IndexFileStatus::STAGED),
+			//.sha1 = hash.c_str(),
+			.fileName = currBlob.getName()
+			
+		};
+		ii.mindexEntries.push_back(currEntry);
+	}
 
 
 }
 
+
+std::string Tree::getHash() { return mhash; };

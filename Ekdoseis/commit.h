@@ -1,19 +1,18 @@
 #pragma once
+#ifndef COMMIT_H
+#define COMMIT_H
 #include <string>
 #include <filesystem >
-
 #include"tree.h"
 
+
+
 namespace fs = std::filesystem;
-
-namespace commit {
-
-}
 
 class Commit {
 private:
 	bool minitialCommit{ false };
-	Tree mtree{""};
+	Tree mtree;
 	std::string mhash;
 	std::string mparentHash;
 	std::string mauthor;
@@ -33,3 +32,4 @@ public:
 
 
 };
+#endif

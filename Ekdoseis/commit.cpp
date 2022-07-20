@@ -1,14 +1,20 @@
 #include<iostream>
+#include<fstream>
 #include<chrono>
-#include"commit.h"
-#include"index.h"
-#include"tree.h"
+
+
 #include"sha1.h"
+
+#include"index.h"
+#include"commit.h"
 #include"utils.h"
 
+#define endl '\n'
 using std::cerr, std::cout;
 
-Commit::Commit(const fs::path& rootPath) :mrootPath{ rootPath } {
+Commit::Commit(const fs::path& rootPath)
+	:mrootPath{ rootPath }, mtree{ "" }
+{
 	std::ifstream headptr{ mrootPath / ".dose/HEAD" };
 	std::string _tempstr, refpath;
 	headptr >> _tempstr >> refpath;
@@ -135,7 +141,7 @@ void Commit::updateLogs() {
 		tempexit();
 	}
 	auto currTime = std::chrono::system_clock::now();
-	cout << "returned ms " << utils::getTime()<<" --" << endl;
+	cout << "returned ms " << utils::getTime() << " --" << endl;
 	uint64_t  time = utils::getTime();
 	logFile << mparentHash << " " << mhash << " " << utils::getTime() << " author message" << endl;//add time, author and message
 }

@@ -4,6 +4,7 @@
 #include<fileapi.h>
 #include"dose.h"
 #include"commit.h"
+#include"utils.h"
 #define endl '\n'
 
 using std::cout;
@@ -35,6 +36,9 @@ Dose& Dose::parseRootCommand() {
 	else if (strcmp(arg_cmd, "log") == 0) {
 		mcommand = LOG;
 	}
+	else if (strcmp(arg_cmd, "checkout") == 0) {
+		mcommand = CHECKOUT;
+	}
 	else {
 		cout << "Error:" << *this << "doesnot exist" << endl;
 		exit(EXIT_FAILURE);
@@ -49,6 +53,7 @@ Dose& Dose::execCommand() {
 	case COMMIT: commit(); break;
 	case STATUS: status(); break;
 	case LOG: log(); break;
+	case CHECKOUT: checkout(); break;
 	}
 	return *this;
 }
@@ -106,70 +111,6 @@ Dose& Dose::init() {
 	headptr.close();
 	cout << "Successfully Initialized empty repo in" << *this << endl;
 
-	return *this;
-}
-Dose& Dose::add() {
-	//check for git init
-	if (!exists(mrootPath / ".dose/index")) {
-		std::ofstream _headptr{ mrootPath / ".dose/index" };
-		_headptr.close();
-	}
-
-	for (int i = 3; i < margc; i++) {
-		if (i == 3) {
-			doseIgnore = DoseIgnore(mrootPath);//we only need it now
-			mindex = Index(mrootPath);
-		}
-		const fs::path _filePath = mrootPath / margv[i];
-		//if(isFile)//todo
-		if (!exists(_filePath)) {
-			cout << "Error: " << _filePath.string() << " doesnot exists." << endl;
-			continue;
-			//exit(EXIT_FAILURE);
-		}
-		if (doseIgnore.has(_filePath)) {
-			cout << "Error: " << margv[i] << " already exists in the doseignore." << endl;
-			continue;
-			//exit(EXIT_FAILURE);
-
-		}
-		/*if (!mindex.hasFileChanged(_filePath)) {
-			cout << "file: " << _filePath << " is upto date" << endl;
-			continue;
-		}*/
-		//todo: cout to cerr
-
-		SHA1 fileSHA;
-		const fs::path objectPath = mrootPath / ".dose/objects";
-		std::string hash{ fileSHA.from_file(_filePath.string()) };
-		size_t   hashLength{ hash.length() };//read: size_t
-		if (!(hashLength == 40)) {
-			std::cerr << "Error: " << "Unwanted hash length" << endl;
-		}
-
-		const fs::path hashDirPath = objectPath / hash.substr(0, 2);
-		ReturnFlag _rf1 = createDirectory(hashDirPath.string());
-		if (!(_rf1 == CREATE_SUCCESS || _rf1 == ALREADY_EXISTS)) {
-			cout << "Error: " << "cannot perform the required action" << endl;
-			exit(EXIT_FAILURE);
-		}
-
-
-		const fs::path _hashFilePath{ hashDirPath / hash.substr(2,hashLength - 2) };
-		std::error_code ec;
-
-		copy_file(_filePath, _hashFilePath, fs::copy_options::skip_existing, ec); //no encryption now maybe later
-		if (ec) {
-			cout << "Error: " << ec.message() << endl;
-			cout << "Error: " << "cannot perform the required action" << endl;
-			exit(EXIT_FAILURE);
-		}
-		bool badd = mindex.add(_filePath, hash);
-		if (badd) {
-			cout << "File: " << _filePath << " staged successfully" << endl;
-		}
-
-	}
 	return *this;
 }
 Dose& Dose::commit() {
@@ -248,13 +189,13 @@ Dose& Dose::log() {
 	}
 
 	std::string line;
-	std::string hash,author,message;
+	std::string hash, author, message;
 	uint64_t time;//time are stroed in 
 	while (std::getline(logFile, line)) {
 		std::istringstream stream{ line };
 		stream.ignore(41, ' ');
-		stream >> hash >>time >>  author >> message;
-		cout << "Commit\t" << hash<<endl;
+		stream >> hash >> time >> author >> message;
+		cout << "Commit\t" << hash << endl;
 		cout << "Author:\t" << author << endl;
 		cout << "Date: ";
 		utils::printDate(time);
@@ -263,11 +204,130 @@ Dose& Dose::log() {
 	}
 	return *this;
 }
+Dose& Dose::add() {
+	//check for git init
+	if (!exists(mrootPath / ".dose/index")) {
+		std::ofstream _headptr{ mrootPath / ".dose/index" };
+		_headptr.close();
+	}
+
+	for (int i = 3; i < margc; i++) {
+		if (i == 3) {
+			doseIgnore = DoseIgnore(mrootPath);//we only need it now
+			mindex = Index(mrootPath);
+			mindex.fetchFromIndex();
+		}
+		const fs::path _filePath = mrootPath / margv[i];
+		//if(isFile)//todo
+		if (!exists(_filePath)) {
+			cout << "Error: " << _filePath.string() << " doesnot exists." << endl;
+			continue;
+			//exit(EXIT_FAILURE);
+		}
+		if (doseIgnore.has(_filePath)) {
+			cout << "Error: " << margv[i] << " already exists in the doseignore." << endl;
+			continue;
+			//exit(EXIT_FAILURE);
+
+		}
+		/*if (!mindex.hasFileChanged(_filePath)) {
+			cout << "file: " << _filePath << " is upto date" << endl;
+			continue;
+		}*/
+		//todo: cout to cerr
+
+		SHA1 fileSHA;
+		const fs::path objectPath = mrootPath / ".dose/objects";
+		std::string hash{ fileSHA.from_file(_filePath.string()) };
+		size_t   hashLength{ hash.length() };//read: size_t
+		if (!(hashLength == 40)) {
+			std::cerr << "Error: " << "Unwanted hash length" << endl;
+		}
+
+		const fs::path hashDirPath = objectPath / hash.substr(0, 2);
+		ReturnFlag _rf1 = createDirectory(hashDirPath.string());
+		if (!(_rf1 == CREATE_SUCCESS || _rf1 == ALREADY_EXISTS)) {
+			cout << "Error: " << "cannot perform the required action" << endl;
+			exit(EXIT_FAILURE);
+		}
+
+
+		const fs::path _hashFilePath{ hashDirPath / hash.substr(2,hashLength - 2) };
+		std::error_code ec;
+
+		fs::copy_file(_filePath, _hashFilePath, fs::copy_options::skip_existing, ec); //no encryption now maybe later
+		if (ec) {
+			cout << "Error: " << ec.message() << endl;
+			cout << "Error: " << "cannot perform the required action" << endl;
+			exit(EXIT_FAILURE);
+		}
+		bool badd = mindex.add(_filePath, hash);
+		if (badd) {
+			cout << "File: " << _filePath << " staged successfully" << endl;
+		}
+
+	}
+	return *this;
+}
+Dose& Dose::checkout() {
+
+	std::string checkoutPoint{ margv[3] };
+
+	if (isBranch(checkoutPoint)) {
+		//implement if implemented branching
+	}
+	else if (isValidCommit(checkoutPoint)) {
+		const fs::path  objPath = mrootPath / ".dose/objects" / checkoutPoint.substr(0, 2) / checkoutPoint.substr(2, 40 - 2);
+		std::ifstream commitiptr{ objPath };
+		std::string treehash;
+		commitiptr >> treehash >> treehash;
+		commitiptr.close();
+
+		const fs::path treePath{ mrootPath / ".dose/obejcts" / treehash.substr(0,2) / treehash.substr(2,40 - 2) };
+		Tree newTree{ "",treehash };
+		newTree.createTreeFromObject();
+		Index newIndex{mrootPath};
+		newTree.createNewIndex(newIndex);//passed as reference
+	}
+
+
+	return *this;
+}
+bool Dose::isValidCommit(const std::string& ch_point) {
+	const fs::path dirPath = mrootPath / ".dose/objects" / ch_point.substr(0, 2);
+	const fs::path requiredPath = dirPath / ch_point.substr(2, 40 - 2);
+	using iterator = fs::recursive_directory_iterator;
+	for (iterator i = fs::recursive_directory_iterator(mrootPath / ".dose/objects");
+		i != fs::recursive_directory_iterator();
+		++i) {
+		//refactor into normal iterator
+		fs::path tmp = i->path();
+		if (!fs::equivalent(i->path(), dirPath)) {
+			i.disable_recursion_pending();
+		}
+		if (fs::equivalent(i->path(), requiredPath)) {
+			cout << "found the checkout point";
+			//sutffs
+			return true;
+			break;
+		}
+	}
+	return false;
+}
+
+bool Dose::isBranch(const std::string& ch_point) {
+	//for (auto const& currBranch : fs::directory_iterator{ mrootPath / ".dose/refs/heads" }) {
+		//cout << currBranch.file_name<<endl;
+		//cout << "df";
+	//}
+	return false;
+}
 
 //TODO:
 //show corresponding commit message if the file is up to date
 //`dose add` doesnot work for directly adding directory
 //add feature of adding commit message to `dose commit` 
+//set file attribute while copying to hashed objects and vice versa
 //bug: last file is inicluded twice
 
 
