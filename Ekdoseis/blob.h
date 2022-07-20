@@ -1,4 +1,6 @@
 #pragma once
+#ifndef BLOB_H
+#define BLOB_H
 #include<string>
 
 class Blob {
@@ -7,8 +9,7 @@ private:
 	std::string myName;
 public:
 	Blob(const std::string& hash, const std::string& name);
-	const std::string& getName() {
-		return myName;
-	}
-	std::string getHash() { return mhash; };
+	const std::string& getName();
+	std::string getHash();
 };
+#endif

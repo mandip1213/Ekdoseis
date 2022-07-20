@@ -153,6 +153,7 @@
     <ClCompile Include="utils.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="commit.h" />
     <ClInclude Include="dose.h" />
     <ClInclude Include="blob.h" />
     <ClInclude Include="doseignore.h" />
