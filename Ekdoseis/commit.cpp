@@ -41,10 +41,14 @@ void Commit::createCommit() {
 	compareTreeHash();//if same program will exit
 
 	std::stringstream streambuf;
+	mcoommitTime = utils::getTime();
 	//todo: add author committer and time
 	//commit message
 	streambuf << "tree " << mtree.getHash() << '\n';
 	streambuf << "parent " << mparentHash << '\n';
+	//streambuf << "author " << "ShakesPeare" << "time "<<"timezone"<<'\n';
+	streambuf << "committer " << "ShakesPeare" << mcoommitTime  << '\n';
+	streambuf << mmessage << '\n';
 
 	SHA1 hash;
 	hash.update(streambuf);
@@ -140,10 +144,7 @@ void Commit::updateLogs() {
 		cerr << "Error: couldnot open log files" << endl;
 		tempexit();
 	}
-	auto currTime = std::chrono::system_clock::now();
-	cout << "returned ms " << utils::getTime() << " --" << endl;
-	uint64_t  time = utils::getTime();
-	logFile << mparentHash << " " << mhash << " " << utils::getTime() << " author message" << endl;//add time, author and message
+	logFile << mparentHash << " " << mhash << " " << mcoommitTime << " author message" << endl;//add time, author and message
 }
 
 

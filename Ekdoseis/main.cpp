@@ -7,12 +7,21 @@ int main(int argc, const char* argv[])
 {
 	if (argc < 3) {
 		cout << "error: not enough argument" << endl;
-		return EXIT_FAILURE;
+		//return EXIT_FAILURE;
 	}
 	if (argc > 10) {
 		cout << "Too many arguments" << endl;
-		return EXIT_FAILURE;
+		//return EXIT_FAILURE;
 	}
+	//std::error_code ec;
+	//fs::path p1{ "C:\\Users\\mandip\\Desktop\\git\\a\\c\\chello\ -\ Copy.txt" };
+	//fs::path p2{ " C:\\Users\\mandip\\Desktop\\git\\a\\c\\chello\ -\ Copy.txt" };
+	//bool b = fs::equivalent(p1, p2,ec);
+	//if (ec) {
+	//	cout << ec.message() << endl;
+	//	cout << ec.value() << endl;
+	//}
+	//cout << std::boolalpha << b << endl;
 	Dose dose{ argc,argv };
 	dose.parseRootCommand().execCommand();
 	return 0;

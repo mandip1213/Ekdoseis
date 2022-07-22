@@ -16,8 +16,10 @@ private:
 	std::string mhash;
 	std::string mparentHash;
 	std::string mauthor;
+	std::string mmessage;
 	fs::path mrootPath;
 	fs::path mrefPath;
+	uint64_t mcoommitTime;
 	void createLogFiles();
 	//timestamp
 	//gmt ahead before 
@@ -29,6 +31,7 @@ public:
 	void fetchParentHash();
 	void updateLogs();
 	void createCommit();
+	void setMessage(std::string message) { mmessage = message; }
 
 
 };

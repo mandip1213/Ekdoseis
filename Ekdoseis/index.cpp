@@ -26,6 +26,8 @@ void Index::fetchFromIndex() {
 index::FileStatus Index::getFileStatus(const fs::path& filePath, bool updateIndex) {
 	std::error_code ec;
 	for (auto& entry : mindexEntries) {
+		fs::path fileIndex{ mrefToRootPath / entry.fileName };
+		bool b = fs::equivalent(mrefToRootPath / entry.fileName, filePath, ec);
 		if (fs::equivalent(mrefToRootPath / entry.fileName, filePath, ec)) {
 			//file exists in index file
 			struct _stat filestat;
@@ -109,7 +111,8 @@ void Index::readFromFile(std::ifstream & fileiptr, index::indexEntry & entry) {
 	fileiptr >> entry.sd_size;
 	//fileiptr.get(static_cast<unsigned char*>(entry.sha1), 20);
 	fileiptr >> entry.sha1;
-	fileiptr >> entry.fileName;
+	//fileiptr >> entry.fileName;
+	std::getline(fileiptr, entry.fileName);
 	//fileiptr.ignore(1);//new line
 }
 

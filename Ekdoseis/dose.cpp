@@ -6,6 +6,9 @@
 #include"commit.h"
 #include"utils.h"
 #define endl '\n'
+//0- root command name//dose 
+//1- location from which comman is called
+//2-main command (add, init,commit ..)
 
 using std::cout;
 Dose::Dose(int n, const char* ptr[]) :margc{ n }, margv{ ptr } {
@@ -114,7 +117,18 @@ Dose& Dose::init() {
 	return *this;
 }
 Dose& Dose::commit() {
+
+
+	if (margc >= 5) {
+		if (!strcmp(margv[4], "-m")) {
+			std::cerr << "Error: Invalid Command" << endl;
+		}
+	}
+	else {
+		std::cerr << "Error: Not enough arguments" << endl;
+	}
 	Commit commit{ mrootPath };
+	commit.setMessage(margv[4]);
 	commit.createTree();
 	commit.fetchParentHash();
 	commit.createCommit();
@@ -129,25 +143,32 @@ Dose& Dose::status() {
 	//}
 	doseIgnore = DoseIgnore(mrootPath);//we only need it now
 	mindex = Index(mrootPath);
+	mindex.fetchFromIndex();
 	std::vector<fs::path> modified;
 	std::vector<fs::path>untracked;
 	std::string symbol("|___");
 	for (iterator i = fs::recursive_directory_iterator(mrootPath);
 		i != fs::recursive_directory_iterator();
 		++i) {
-		if (doseIgnore.has(i->path())) {
+		fs::path p{ i->path() };
+		if (doseIgnore.has(p)) {
 			i.disable_recursion_pending();
 			continue;
 		}
-		if (fs::equivalent(i->path(), mrootPath / ".dose")) {
+		if (fs::equivalent(p, mrootPath / ".dose")) {
 			//cout << "Dose found" << endl;
 			i.disable_recursion_pending();
+			continue;
 		}
-		if (fs::equivalent(i->path(), mrootPath / ".git")) {
+		if (fs::equivalent(p, mrootPath / ".git")) {
 			//cout << "Dose found" << endl;
 			i.disable_recursion_pending();
+			continue;
 		}
-		fs::path p{ i->path() };
+
+		if (fs::is_directory(p)) {
+			continue;
+		}
 
 		using namespace index;
 		index::FileStatus status = mindex.getFileStatus(i->path());
@@ -349,12 +370,8 @@ bool Dose::isBranch(const std::string& ch_point) {
 
 //TODO:
 //show corresponding commit message if the file is up to date
-//`dose add` doesnot work for directly adding directory
-//add feature of adding commit message to `dose commit` 
 //set file attribute while copying to hashed objects and vice versa
-//bug: last file is inicluded twice
-//cannot add multiple files at once
-//work on deleting and creating dir while checking out
+//cannot add multiple files at once//work on deleting and creating dir while checking out
 //
 
 

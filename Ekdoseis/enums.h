@@ -34,25 +34,6 @@ namespace index {
 		MODIFIED,
 		UNTRACKED,
 	};
-	/*	struct time {
-			uint32_t sec;
-			uint32_t nsec;
-		};
-	*/
-	/*	struct statData {
-			//struct time createdTime;
-			//struct time modifiedTime;
-			unsigned int createdTime;
-			unsigned int modifiedTime;
-			unsigned int sd_dev;//metadata
-			unsigned int sd_ino;//metadata
-			unsigned int mode;//permissoins -only this is used in windows
-			unsigned int sd_uid;//metadata
-			unsigned int sd_gid;//metadata
-			unsigned int sd_size;//filesize
-		};
-	*/
-
 
 	struct indexEntry {
 		unsigned int createdTime;
