@@ -5,9 +5,8 @@
 #include<string>
 #include<filesystem>
 #include"blob.h"
-//#include"index.h"
 
-class Index;
+class Index;//yo line le 3 ghanta insane banayo
 namespace fs = std::filesystem;
 class Tree {
 private:
@@ -22,8 +21,7 @@ public:
 	void createTreeObjects();//physically create objects a/c to tree lists
 	std::string getHash();//remove this and use friend function of class
 	void createTreeFromObject();
-	void createNewIndex( Index& ii);
-
+	void createNewIndex( Index& ii,std::string dir="");
 };
 
 #endif 

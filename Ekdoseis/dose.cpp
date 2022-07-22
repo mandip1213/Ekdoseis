@@ -204,41 +204,43 @@ Dose& Dose::log() {
 	}
 	return *this;
 }
-Dose& Dose::add() {
-	//check for git init
-	if (!exists(mrootPath / ".dose/index")) {
-		std::ofstream _headptr{ mrootPath / ".dose/index" };
-		_headptr.close();
+void Dose::addFile(const fs::path& currPath) {
+	if (!exists(currPath)) {
+		cout << "Error: " << currPath.string() << " doesnot exists." << endl;
+		return;
+		//exit(EXIT_FAILURE);
 	}
-
-	for (int i = 3; i < margc; i++) {
-		if (i == 3) {
-			doseIgnore = DoseIgnore(mrootPath);//we only need it now
-			mindex = Index(mrootPath);
-			mindex.fetchFromIndex();
+	if (doseIgnore.has(currPath)) {
+		cout << " debug Error: " << currPath << " already exists in the doseignore." << endl;
+		return;
+		//exit(EXIT_FAILURE);
+	}
+	if (fs::is_directory(currPath)) {
+		using iterator = fs::recursive_directory_iterator;
+		for (iterator i = fs::recursive_directory_iterator(currPath);
+			i != fs::recursive_directory_iterator();
+			++i) {
+			fs::path p{ i->path() };
+			if (doseIgnore.has(p)) {
+				i.disable_recursion_pending();
+				continue;
+			}
+			if (fs::is_directory(p)) {
+				continue;
+			}
+			addFile(p);
+			//using namespace index;
+			//index::FileStatus status = mindex.getFileStatus(i->path());
+			//std::cout << i->path().filename() << "    " << endl;
+			//cout << i->path()<<endl;
 		}
-		const fs::path _filePath = mrootPath / margv[i];
-		//if(isFile)//todo
-		if (!exists(_filePath)) {
-			cout << "Error: " << _filePath.string() << " doesnot exists." << endl;
-			continue;
-			//exit(EXIT_FAILURE);
-		}
-		if (doseIgnore.has(_filePath)) {
-			cout << "Error: " << margv[i] << " already exists in the doseignore." << endl;
-			continue;
-			//exit(EXIT_FAILURE);
+		cout << endl << endl;
 
-		}
-		/*if (!mindex.hasFileChanged(_filePath)) {
-			cout << "file: " << _filePath << " is upto date" << endl;
-			continue;
-		}*/
-		//todo: cout to cerr
-
+	}
+	else {
 		SHA1 fileSHA;
 		const fs::path objectPath = mrootPath / ".dose/objects";
-		std::string hash{ fileSHA.from_file(_filePath.string()) };
+		std::string hash{ fileSHA.from_file(currPath.string()) };
 		size_t   hashLength{ hash.length() };//read: size_t
 		if (!(hashLength == 40)) {
 			std::cerr << "Error: " << "Unwanted hash length" << endl;
@@ -251,21 +253,37 @@ Dose& Dose::add() {
 			exit(EXIT_FAILURE);
 		}
 
-
 		const fs::path _hashFilePath{ hashDirPath / hash.substr(2,hashLength - 2) };
 		std::error_code ec;
 
-		fs::copy_file(_filePath, _hashFilePath, fs::copy_options::skip_existing, ec); //no encryption now maybe later
+		fs::copy_file(currPath, _hashFilePath, fs::copy_options::skip_existing, ec); //no encryption now maybe later
 		if (ec) {
 			cout << "Error: " << ec.message() << endl;
 			cout << "Error: " << "cannot perform the required action" << endl;
 			exit(EXIT_FAILURE);
 		}
-		bool badd = mindex.add(_filePath, hash);
+		bool badd = mindex.add(currPath, hash);
 		if (badd) {
-			cout << "File: " << _filePath << " staged successfully" << endl;
+			cout << "File: " << currPath << " staged successfully" << endl;
 		}
+	}
+}
 
+Dose& Dose::add() {
+	//check for git init
+	if (!exists(mrootPath / ".dose/index")) {
+		std::ofstream _headptr{ mrootPath / ".dose/index" };
+		_headptr.close();
+	}
+	doseIgnore = DoseIgnore(mrootPath);//we only need it now
+	mindex = Index(mrootPath);
+	mindex.fetchFromIndex();
+
+	for (int i = 3; i < margc; i++) {
+		const fs::path _path = mrootPath / margv[i];
+		//if(isFile)//todo
+		addFile(_path);
+		cout << _path << endl;
 	}
 	return *this;
 }
@@ -273,6 +291,8 @@ Dose& Dose::checkout() {
 
 	std::string checkoutPoint{ margv[3] };
 
+	mindex = Index{ mrootPath };
+	mindex.fetchFromIndex();
 	if (isBranch(checkoutPoint)) {
 		//implement if implemented branching
 	}
@@ -282,13 +302,16 @@ Dose& Dose::checkout() {
 		std::string treehash;
 		commitiptr >> treehash >> treehash;
 		commitiptr.close();
-
 		const fs::path treePath{ mrootPath / ".dose/obejcts" / treehash.substr(0,2) / treehash.substr(2,40 - 2) };
 		Tree newTree{ "",treehash };
 		newTree.createTreeFromObject();
-		Index newIndex{mrootPath};
+		Index newIndex{ mrootPath };
 		newTree.createNewIndex(newIndex);//passed as reference
+		this->mindex.checkcout(newIndex);
+
+		//for (auto& entries : newIndex.mindexEntries)
 	}
+
 
 
 	return *this;
@@ -302,10 +325,11 @@ bool Dose::isValidCommit(const std::string& ch_point) {
 		++i) {
 		//refactor into normal iterator
 		fs::path tmp = i->path();
-		if (!fs::equivalent(i->path(), dirPath)) {
+		std::error_code ec;
+		if (!fs::equivalent(i->path(), dirPath, ec)) {
 			i.disable_recursion_pending();
 		}
-		if (fs::equivalent(i->path(), requiredPath)) {
+		if (fs::equivalent(i->path(), requiredPath, ec)) {
 			cout << "found the checkout point";
 			//sutffs
 			return true;
@@ -329,5 +353,8 @@ bool Dose::isBranch(const std::string& ch_point) {
 //add feature of adding commit message to `dose commit` 
 //set file attribute while copying to hashed objects and vice versa
 //bug: last file is inicluded twice
+//cannot add multiple files at once
+//work on deleting and creating dir while checking out
+//
 
 

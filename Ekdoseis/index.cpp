@@ -1,4 +1,5 @@
 #include "index.h"
+#include "sha1.h"
 
 //namespace fs = std::filesystem;
 using std::cerr, std::cout;
@@ -41,7 +42,20 @@ index::FileStatus Index::getFileStatus(const fs::path& filePath, bool updateInde
 				//so file is changed
 				//and hence change the modifed date index too and update the index
 				if (updateIndex == true) {
+					SHA1 sha1;
+					std::string hash{ sha1.from_file(filePath.string()) };
+					const fs::path _hashFilePath{ mrefToRootPath / ".dose/objects" / hash.substr(0,2) / hash.substr(2,40 - 2) };
+
+					std::error_code ec;
+					fs::copy_file(filePath, _hashFilePath, fs::copy_options::skip_existing, ec); //no encryption now maybe later
+					if (ec) {
+						cout << "Error: " << ec.message() << endl;
+						cout << "Error: " << "cannot perform the required action" << endl;
+						exit(EXIT_FAILURE);
+					}
+
 					entry.modifiedTime = filestat.st_mtime;
+					entry.sha1 = hash;
 				}
 				return  index::FileStatus::MODIFIED;
 			}
@@ -60,18 +74,13 @@ Index::Index(const fs::path & rootPath)
 	if (!exists(mindexPath)) {
 		std::ofstream _indexfptr{ mindexPath };
 	}
-
 }
+
 
 void Index::writeToFile(const index::indexEntry * entry) {
 	//entry=nullptr(def val)
 	std::ofstream fileoptr{ mindexPath };
-	if (entry) {
-		fileoptr << ++mtreeCount << '\n';
-	}
-	else {
-		fileoptr << mtreeCount << '\n';
-	}
+	fileoptr << mtreeCount << '\n';
 	for (auto entry : mindexEntries) {
 		fileoptr << entry.createdTime << ' '
 			<< entry.modifiedTime << ' '
@@ -84,20 +93,6 @@ void Index::writeToFile(const index::indexEntry * entry) {
 			<< entry.sd_size << ' '
 			<< entry.sha1 << ' '
 			<< entry.fileName.c_str() << '\n';
-	}
-	if (entry) {
-
-		fileoptr << entry->createdTime << ' '
-			<< entry->modifiedTime << ' '
-			<< entry->sd_dev << ' '
-			<< entry->sd_ino << ' '
-			<< entry->mode << ' '
-			<< entry->sd_uid << ' '
-			<< entry->sd_gid << ' '
-			<< entry->flag << ' '
-			<< entry->sd_size << ' '
-			<< entry->sha1 << ' '
-			<< entry->fileName.c_str() << '\n';
 	}
 }
 
@@ -125,13 +120,13 @@ bool Index::add(const fs::path & filePath, const std::string & hash) {
 	if (fileStatus == MODIFIED) {
 		//The modiifeid date inindex entries is updated
 		writeToFile();
-		return true ;
+		return true;
 	}
 	if (fileStatus == COMMITTED) {
 		cout << "nothing to add in file " << filePath << endl;
 		return false;
 	}
-	if (fileStatus == STAGED ) {
+	if (fileStatus == STAGED) {
 		cout << "file: " << filePath << " is already staged" << endl;
 		return false;
 	}
@@ -142,7 +137,7 @@ bool Index::add(const fs::path & filePath, const std::string & hash) {
 	if (ec) {
 		std::cerr << "Error: cannot stage " << filePath.string() << endl;
 		exit(EXIT_FAILURE);
-		return false ;
+		return false;
 	}
 	std::string str = relativePath.string();
 	index::indexEntry currEntry = {
@@ -161,8 +156,9 @@ bool Index::add(const fs::path & filePath, const std::string & hash) {
 	};
 	//utils::toHexEncoding(hash, currEntry.sha1);
 
-	mindexEntries.push_back(currEntry);
-	writeToFile(&currEntry);
+	this->mindexEntries.push_back(currEntry);
+	mtreeCount++;
+	writeToFile();
 	//indexfptr.write((char*)&currEntry, sizeof(index::indexEntry));
 	//indexfptr.close();
 	return true;
@@ -182,8 +178,45 @@ bool Index::hasFileChanged(const fs::path & filepath) {
 	return false;
 }
 
+void Index::checkcout(Index & newIndex) {
+	newIndex.writeToFile();//update index
+
+	//update directory
+	for (auto& newEntry : newIndex.mindexEntries) {
+		fs::path fromP{ mrefToRootPath / ".dose/objects/" / newEntry.sha1.substr(0,2) / newEntry.sha1.substr(2,40 - 2) };
+		fs::path toP{ mrefToRootPath / newEntry.fileName };
+		std::ifstream tp{ toP };
+		cout << tp.rdbuf();
+		tp.close();
+		std::error_code ec;
+		bool _tb = fs::copy_file(fromP, toP, fs::copy_options::overwrite_existing, ec);
+		cout << ec.message() << ec.value() << endl;
+	}
+	//delete files that are only in oldindex
+
+	for (auto& oldEntry : this->mindexEntries) {
+		bool foundMatch = false;
+		fs::path filePath{ oldEntry.fileName };
+		for (auto& newEntry : newIndex.mindexEntries) {
+			if (filePath.compare(fs::path{ newEntry.fileName }) == 0) {
+				foundMatch = true;
+				break;
+			}
+		}
+		if (foundMatch)continue;
+		else {
+			std::error_code ec;
+			if (fs::remove(fs::current_path() / oldEntry.fileName, ec)) {
+			}
+			if (ec) {
+				cerr << "Error: " << ec.message() << endl;
+			}
+		}
+	}
+}
+
+
 
 //TODO: work on getFileStatus function
 //TODO: work on git status function
 //TODO: work on git commit function
-//TODO: solve bug on hexa encoded hash string while reading from file  (may be use binary format

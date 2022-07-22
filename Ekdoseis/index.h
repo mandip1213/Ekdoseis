@@ -41,9 +41,8 @@ public:
 	bool add(const fs::path& filePath, const std::string& hash);
 	index::FileStatus getFileStatus(const fs::path& filePath, bool upDateIndex = false);
 	bool hasFileChanged(const fs::path& filepath);
+	void checkcout( Index& newIndex);
 	friend void Commit::createTree();
-	friend void Tree::createNewIndex(Index& ii);
+	friend void Tree::createNewIndex(Index& ii,std::string dir);
 };
-
-
 #endif

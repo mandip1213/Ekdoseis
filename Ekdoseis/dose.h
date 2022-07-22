@@ -32,6 +32,7 @@ public:
 	//	Dose() = default;
 	Dose(int n, const  char* ptr[]);
 	friend	 std::ostream& operator<<(std::ostream& out, const Dose& dose);
+	void addFile(const fs::path& filePath);
 	Dose& parseRootCommand();
 	Dose& execCommand();
 	Dose& init();

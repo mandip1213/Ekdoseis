@@ -108,12 +108,15 @@ void Tree::createTreeFromObject() {
 	}
 }
 
-void Tree::createNewIndex(Index& ii) {
-	fs::path currPath = fs::current_path();
+void Tree::createNewIndex(Index& ii,std::string dirName) {
+	//fs::path currPath = fs::current_path();
+	//fs::path dirPath = fs::current_path() / dirName;
 	for (auto& currBlob : mblobs) {
-		fs::path filePath = fs::current_path() / currPath / filePath;
+		fs::path filePath = fs::current_path()/dirName / currBlob.getName();
 		struct _stat stat;
+		//get stat from hashed obj ig
 		bool _temp = _stat(filePath.string().c_str(), &stat);//_bool ?
+
 		index::indexEntry currEntry = {
 			.createdTime = static_cast<unsigned int>(stat.st_ctime),
 			.modifiedTime = static_cast<unsigned int>(stat.st_mtime),
@@ -126,13 +129,15 @@ void Tree::createNewIndex(Index& ii) {
 			.sha1 = currBlob.getHash(),
 			.flag = static_cast<unsigned int>(index::IndexFileStatus::STAGED),
 			//.sha1 = hash.c_str(),
-			.fileName = currBlob.getName()
+			.fileName = dirName + currBlob.getName()
 			
 		};
+		ii.mtreeCount++;
 		ii.mindexEntries.push_back(currEntry);
 	}
-
-
+	for (auto& currTree : mtrees) {
+		currTree.createNewIndex(ii,dirName+currTree.myName+"/");
+	}
 }
 
 
