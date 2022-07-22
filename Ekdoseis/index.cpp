@@ -112,7 +112,7 @@ void Index::readFromFile(std::ifstream & fileiptr, index::indexEntry & entry) {
 	//fileiptr.get(static_cast<unsigned char*>(entry.sha1), 20);
 	fileiptr >> entry.sha1;
 	//fileiptr >> entry.fileName;
-	std::getline(fileiptr, entry.fileName);
+	std::getline(fileiptr>>std::ws, entry.fileName);
 	//fileiptr.ignore(1);//new line
 }
 

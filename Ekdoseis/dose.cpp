@@ -145,7 +145,9 @@ Dose& Dose::status() {
 	mindex = Index(mrootPath);
 	mindex.fetchFromIndex();
 	std::vector<fs::path> modified;
+	std::vector<fs::path> staged;
 	std::vector<fs::path>untracked;
+	std::vector<fs::path>committed;
 	std::string symbol("|___");
 	for (iterator i = fs::recursive_directory_iterator(mrootPath);
 		i != fs::recursive_directory_iterator();
@@ -173,30 +175,44 @@ Dose& Dose::status() {
 		using namespace index;
 		index::FileStatus status = mindex.getFileStatus(i->path());
 		if (status == FileStatus::STAGED) {
+			staged.push_back(fs::relative(p,mrootPath));
 		}
-		if (status == FileStatus::UNTRACKED) {
-			untracked.push_back(i->path());
+		else if (status == FileStatus::COMMITTED) {
+			committed.push_back(fs::relative(p,mrootPath));
 		}
-		if (status == FileStatus::MODIFIED) {
-			untracked.push_back(i->path());
+		else if (status == FileStatus::UNTRACKED) {
+			untracked.push_back(fs::relative(p,mrootPath));
+		}
+		else if (status == FileStatus::MODIFIED) {
+			modified.push_back(fs::relative(p,mrootPath));
 		};
 
 		if (i.depth() != 0) {
-			std::cout << std::string((i.depth() - 1) * 4, ' ');
-			std::cout << symbol;
+			//std::cout << std::string((i.depth() - 1) * 4, ' ');
+			// std::cout << symbol;
 		}
-		std::cout << i->path().filename() << "    " << endl;
+		//std::cout << p.filename() << "    " << endl;
 		//cout << i->path()<<endl;
+	}
+	cout << endl << endl;
+	cout << "committed: " << endl;
+	for (auto it : committed) {
+		std::cout << it<< "    " << endl;
+	}
+	cout << endl << endl;
+	cout << "staged: " << endl;
+	for (auto it : staged) {
+		std::cout << it<< "    " << endl;
 	}
 	cout << endl << endl;
 	cout << "modified: " << endl;
 	for (auto it : modified) {
-		std::cout << it.filename() << "    " << endl;
+		std::cout << it<< "    " << endl;
 	}
 	cout << endl << endl;
 	cout << "untracked: " << endl;
 	for (auto it : untracked) {
-		std::cout << it.filename() << "    " << endl;
+		std::cout << it<< "    " << endl;
 	}
 	return *this;
 }
@@ -374,4 +390,12 @@ bool Dose::isBranch(const std::string& ch_point) {
 //cannot add multiple files at once//work on deleting and creating dir while checking out
 //
 
+//work with commited and staged flag in index file and show status accordingly
+
+//see and read:
+//locaking file 
+//handle adding existing directory as file
+//handle adding existing file as directory
+//handle files not having enough permissions
+//when user add files outside of root directory
 
