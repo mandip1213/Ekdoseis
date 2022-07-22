@@ -162,12 +162,15 @@ Dose& Dose::status() {
 			i.disable_recursion_pending();
 			continue;
 		}
+		if (fs::exists(mrootPath / ".git")) {
+
 		if (fs::equivalent(p, mrootPath / ".git")) {
 			//cout << "Dose found" << endl;
 			i.disable_recursion_pending();
 			continue;
 		}
 
+		}
 		if (fs::is_directory(p)) {
 			continue;
 		}
