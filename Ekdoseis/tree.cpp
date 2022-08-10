@@ -108,11 +108,11 @@ void Tree::createTreeFromObject() {
 	}
 }
 
-void Tree::createNewIndex(Index& ii,std::string dirName) {
+void Tree::createNewIndex(Index& ii, std::string dirName) {
 	//fs::path currPath = fs::current_path();
 	//fs::path dirPath = fs::current_path() / dirName;
 	for (auto& currBlob : mblobs) {
-		fs::path filePath = fs::current_path()/dirName / currBlob.getName();
+		fs::path filePath = fs::current_path() / dirName / currBlob.getName();
 		struct _stat stat;
 		//get stat from hashed obj ig
 		bool _temp = _stat(filePath.string().c_str(), &stat);//_bool ?
@@ -130,15 +130,29 @@ void Tree::createNewIndex(Index& ii,std::string dirName) {
 			.flag = static_cast<unsigned int>(index::IndexFileStatus::STAGED),
 			//.sha1 = hash.c_str(),
 			.fileName = dirName + currBlob.getName()
-			
+
 		};
 		ii.mtreeCount++;
 		ii.mindexEntries.push_back(currEntry);
 	}
 	for (auto& currTree : mtrees) {
-		currTree.createNewIndex(ii,dirName+currTree.myName+"/");
+		currTree.createNewIndex(ii, dirName + currTree.myName + "/");
 	}
 }
 
 
 std::string Tree::getHash() { return mhash; };
+
+std::string Tree::getHashOfFile(const std::string& fileName)const {
+	auto blob = std::find_if(mblobs.begin(), mblobs.end(), [fileName](auto curr) {
+		return curr.getName() == fileName;
+		});
+	if (blob != mblobs.end()) {
+		return blob->getHash();
+	}
+	for (auto currTree : mtrees) {
+		currTree.getHashOfFile(fileName);
+	}
+	return "";//if filenot found
+
+}

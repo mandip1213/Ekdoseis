@@ -1,3 +1,4 @@
+#include<algorithm>
 #include "index.h"
 #include "sha1.h"
 
@@ -58,6 +59,7 @@ index::FileStatus Index::getFileStatus(const fs::path& filePath, bool updateInde
 
 					entry.modifiedTime = filestat.st_mtime;
 					entry.sha1 = hash;
+					entry.flag = static_cast<unsigned int>(index::IndexFileStatus::STAGED);
 				}
 				return  index::FileStatus::MODIFIED;
 			}
@@ -112,7 +114,7 @@ void Index::readFromFile(std::ifstream & fileiptr, index::indexEntry & entry) {
 	//fileiptr.get(static_cast<unsigned char*>(entry.sha1), 20);
 	fileiptr >> entry.sha1;
 	//fileiptr >> entry.fileName;
-	std::getline(fileiptr>>std::ws, entry.fileName);
+	std::getline(fileiptr >> std::ws, entry.fileName);
 	//fileiptr.ignore(1);//new line
 }
 
@@ -122,7 +124,9 @@ bool Index::add(const fs::path & filePath, const std::string & hash) {
 	index::FileStatus fileStatus = getFileStatus(filePath, true);
 	if (fileStatus == MODIFIED) {
 		//The modiifeid date inindex entries is updated
+
 		writeToFile();
+
 		return true;
 	}
 	if (fileStatus == COMMITTED) {
@@ -218,7 +222,85 @@ void Index::checkcout(Index & newIndex) {
 	}
 }
 
+void Index::restoreFile(const fs::path & path) {
 
+	if (!exists(path)) {
+		cout << "Error: " << path.string() << " doesnot exists." << endl;
+		return;
+		//exit(EXIT_FAILURE);
+	}
+	if (fs::is_directory(path)) {
+		using iterator = fs::recursive_directory_iterator;
+		for (iterator i = fs::recursive_directory_iterator(path);
+			i != fs::recursive_directory_iterator();
+			++i) {
+			fs::path p{ i->path() };
+			if (fs::is_directory(p)) {
+				continue;
+			}
+			restoreFile(p);
+			/*in the below else statement commit tree is created for everyfile to restore todo imporve*/
+			//addFile(p);
+		}
+		cout << endl << endl;
+
+	}
+	else {
+		/*
+		if the file isnot staged simply return
+		if the file is staged
+		if the file was commited before update the index to point to commited hash
+		else remove from index
+		*/
+		auto status = this->getFileStatus(path);
+		if (status != index::FileStatus::STAGED) {
+			return;
+		}
+		Commit commit{ this->mrefToRootPath };
+		//load from latest commit
+		if (!commit.loadFromCommitHash()) {
+			//remove from index todo
+			std::erase_if(this->mindexEntries, [path, this](auto entry) {
+				return  fs::equivalent(this->mrefToRootPath / entry.fileName, path);
+				});
+			this->mtreeCount--;
+			this->writeToFile();
+			return;
+		}
+		else {
+			//the repo was commited before
+			std::error_code ec;
+			const fs::path relPath = fs::relative(path, mrefToRootPath, ec);
+			std::string hash = commit.getTree().getHashOfFile(relPath.string());
+			if (hash.empty()) {
+				//file was not committed before
+				std::erase_if(this->mindexEntries, [path, this](auto entry) {
+					return  fs::equivalent(this->mrefToRootPath / entry.fileName, path);
+					});
+				this->mtreeCount--;
+				this->writeToFile();
+				return;
+			}
+			else {
+				auto found = std::find_if(mindexEntries.begin(), mindexEntries.end(), [path, this](auto entry) {
+					return  fs::equivalent(this->mrefToRootPath / entry.fileName, path);
+					});
+				if (found != mindexEntries.end()) {
+					found->sha1 = hash;
+					found->flag = static_cast<int>(index::IndexFileStatus::COMMITTED);
+					//MUST: The files mtime is last modified time and the file is not staged so while adding only the mtime is checked curretnly so a bug .
+					// check the contents too
+					//TODO: modified date
+					this->writeToFile();
+				}
+			}
+
+		}
+
+	}
+
+
+}
 
 //TODO: work on getFileStatus function
 //TODO: work on git status function

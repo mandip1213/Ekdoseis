@@ -36,6 +36,9 @@ Dose& Dose::parseRootCommand() {
 	else if (strcmp(arg_cmd, "status") == 0) {
 		mcommand = STATUS;
 	}
+	else if (strcmp(arg_cmd, "restore") == 0) {
+		mcommand = RESTORE;
+	}
 	else if (strcmp(arg_cmd, "log") == 0) {
 		mcommand = LOG;
 	}
@@ -57,6 +60,7 @@ Dose& Dose::execCommand() {
 	case STATUS: status(); break;
 	case LOG: log(); break;
 	case CHECKOUT: checkout(); break;
+	case RESTORE:restore(); break;
 	}
 	return *this;
 }
@@ -132,6 +136,7 @@ Dose& Dose::commit() {
 	commit.createTree();
 	commit.fetchParentHash();
 	commit.createCommit();
+
 	//	commit.compareTreeHash();//todo: instead of this  check the flag of every file of index
 	std::error_code ec;
 	return *this;
@@ -164,11 +169,11 @@ Dose& Dose::status() {
 		}
 		if (fs::exists(mrootPath / ".git")) {
 
-		if (fs::equivalent(p, mrootPath / ".git")) {
-			//cout << "Dose found" << endl;
-			i.disable_recursion_pending();
-			continue;
-		}
+			if (fs::equivalent(p, mrootPath / ".git")) {
+				//cout << "Dose found" << endl;
+				i.disable_recursion_pending();
+				continue;
+			}
 
 		}
 		if (fs::is_directory(p)) {
@@ -178,16 +183,16 @@ Dose& Dose::status() {
 		using namespace index;
 		index::FileStatus status = mindex.getFileStatus(i->path());
 		if (status == FileStatus::STAGED) {
-			staged.push_back(fs::relative(p,mrootPath));
+			staged.push_back(fs::relative(p, mrootPath));
 		}
 		else if (status == FileStatus::COMMITTED) {
-			committed.push_back(fs::relative(p,mrootPath));
+			committed.push_back(fs::relative(p, mrootPath));
 		}
 		else if (status == FileStatus::UNTRACKED) {
-			untracked.push_back(fs::relative(p,mrootPath));
+			untracked.push_back(fs::relative(p, mrootPath));
 		}
 		else if (status == FileStatus::MODIFIED) {
-			modified.push_back(fs::relative(p,mrootPath));
+			modified.push_back(fs::relative(p, mrootPath));
 		};
 
 		if (i.depth() != 0) {
@@ -200,22 +205,22 @@ Dose& Dose::status() {
 	cout << endl << endl;
 	cout << "committed: " << endl;
 	for (auto it : committed) {
-		std::cout << it<< "    " << endl;
+		std::cout << it << "    " << endl;
 	}
 	cout << endl << endl;
 	cout << "staged: " << endl;
 	for (auto it : staged) {
-		std::cout << it<< "    " << endl;
+		std::cout << it << "    " << endl;
 	}
 	cout << endl << endl;
 	cout << "modified: " << endl;
 	for (auto it : modified) {
-		std::cout << it<< "    " << endl;
+		std::cout << it << "    " << endl;
 	}
 	cout << endl << endl;
 	cout << "untracked: " << endl;
 	for (auto it : untracked) {
-		std::cout << it<< "    " << endl;
+		std::cout << it << "    " << endl;
 	}
 	return *this;
 }
@@ -266,6 +271,7 @@ void Dose::addFile(const fs::path& currPath) {
 				continue;
 			}
 			if (fs::is_directory(p)) {
+				//skip (files inside it will be handled by recursive iteration)
 				continue;
 			}
 			addFile(p);
@@ -322,7 +328,7 @@ Dose& Dose::add() {
 	for (int i = 3; i < margc; i++) {
 		const fs::path _path = mrootPath / margv[i];
 		//if(isFile)//todo
-		addFile(_path);
+		this->addFile(_path);
 		cout << _path << endl;
 	}
 	return *this;
@@ -387,6 +393,27 @@ bool Dose::isBranch(const std::string& ch_point) {
 	return false;
 }
 
+Dose& Dose::restore() {
+	//0 command 1 location 2 root command
+
+	if (strcmp(margv[3], "--staged") == 0) {
+		//unstage file from staging area
+		mindex = Index(mrootPath);
+		mindex.fetchFromIndex();
+		for (int i = 4; i < margc; i++) {
+			const fs::path _path = mrootPath / margv[i];
+			mindex.restoreFile(mrootPath / margv[i]);
+		}
+	}
+	else {
+		//restore the content of the file to that of latest commit
+		//TODO
+
+	}
+
+
+	return *this;
+}
 //TODO:
 //show corresponding commit message if the file is up to date
 //set file attribute while copying to hashed objects and vice versa
@@ -396,7 +423,7 @@ bool Dose::isBranch(const std::string& ch_point) {
 //work with commited and staged flag in index file and show status accordingly
 
 //see and read:
-//locaking file 
+//locking file 
 //handle adding existing directory as file
 //handle adding existing file as directory
 //handle files not having enough permissions

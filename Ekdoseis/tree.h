@@ -22,6 +22,7 @@ public:
 	std::string getHash();//remove this and use friend function of class
 	void createTreeFromObject();
 	void createNewIndex( Index& ii,std::string dir="");
+	std::string getHashOfFile(const std::string& fileName)const;
 };
 
 #endif 

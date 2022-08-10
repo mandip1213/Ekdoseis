@@ -32,6 +32,8 @@ public:
 	void updateLogs();
 	void createCommit();
 	void setMessage(std::string message) { mmessage = message; }
+	bool loadFromCommitHash(const std::string& hash = "");
+	const Tree& getTree()const { return mtree; }
 
 
 };

@@ -9,7 +9,7 @@ private:
 	std::string myName;
 public:
 	Blob(const std::string& hash, const std::string& name);
-	const std::string& getName();
-	std::string getHash();
+	const std::string& getName()const;
+	std::string getHash()const;
 };
 #endif

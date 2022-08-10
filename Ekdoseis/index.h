@@ -44,5 +44,6 @@ public:
 	void checkcout( Index& newIndex);
 	friend void Commit::createTree();
 	friend void Tree::createNewIndex(Index& ii,std::string dir);
+	void restoreFile(const fs::path& path);
 };
 #endif

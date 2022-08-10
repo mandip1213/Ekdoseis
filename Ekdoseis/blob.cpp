@@ -4,7 +4,7 @@ Blob::Blob(const std::string& hash, const std::string& name)
 	:myName{ name }, mhash{ hash }{
 }
 
-const std::string& Blob::getName() {
+const std::string& Blob::getName() const{
 	return myName;
 }
-	std::string Blob::getHash() { return mhash; };
+	std::string Blob::getHash() const{ return mhash; };

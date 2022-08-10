@@ -47,7 +47,7 @@ void Commit::createCommit() {
 	streambuf << "tree " << mtree.getHash() << '\n';
 	streambuf << "parent " << mparentHash << '\n';
 	//streambuf << "author " << "ShakesPeare" << "time "<<"timezone"<<'\n';
-	streambuf << "committer " << "ShakesPeare" << mcoommitTime  << '\n';
+	streambuf << "committer " << "ShakesPeare" << mcoommitTime << '\n';
 	streambuf << mmessage << '\n';
 
 	SHA1 hash;
@@ -70,7 +70,6 @@ void Commit::createCommit() {
 	}
 	updateLogs();
 	updateHead();
-	//TODO: update Index -> the flag
 }
 void Commit::createLogFiles() {
 	ReturnFlag _rf = utils::createObjectDir(mrootPath / ".dose/logs");
@@ -94,6 +93,15 @@ void Commit::createTree() {
 	Index index{ mrootPath };
 	index.fetchFromIndex();
 	std::error_code ec;
+
+	bool isallCommited = !std::any_of(index.mindexEntries.begin(), index.mindexEntries.end(), [](auto curr) {
+		return static_cast<index::IndexFileStatus>(curr.flag) == index::IndexFileStatus::STAGED;
+		});
+	if (isallCommited) {
+		cout << "Nothing to commit. All files up to date" << endl;
+		cout << "Please add files with `dose add [files]` before commiting" << endl;
+		exit(EXIT_SUCCESS);
+	}
 	for (auto& entry : index.mindexEntries) {
 		fs::path relativePath = entry.fileName;
 		if (ec) {
@@ -103,6 +111,7 @@ void Commit::createTree() {
 		mtree.insertBlob(entry.sha1, relativePath);//insert the blob into appropriate location in the tree
 		entry.flag = static_cast<unsigned int>(index::IndexFileStatus::COMMITTED);
 	}
+	index.writeToFile();//updating index with flag set to commited
 	//create a tree object according to the tree data strucutre and 	index.writeToFile();
 	mtree.createTreeObjects();
 }
@@ -144,7 +153,29 @@ void Commit::updateLogs() {
 		cerr << "Error: couldnot open log files" << endl;
 		tempexit();
 	}
-	logFile << mparentHash << " " << mhash << " " << mcoommitTime << " author message" << endl;//add time, author and message
+	logFile << mparentHash << " " << mhash << " " << mcoommitTime << " author " << mmessage << endl;//add time, author and message
 }
 
+
+bool Commit::loadFromCommitHash(const std::string& hash) {
+	if (hash.empty()) {
+		/*load from latest commit*/
+		std::ifstream refstream{ mrefPath };
+		refstream >> mparentHash;
+		if (mparentHash.empty()) {
+			//no commit has been made yet so its empty
+			return false;
+		}
+	}
+	else {
+		mparentHash = hash;
+	}
+	//create the tree recursively 
+	std::ifstream commitptr{ mrootPath / ".dose/objects" / mparentHash.substr(0,2) / mparentHash.substr(2,40 - 2) };
+	std::string treehash;
+	commitptr >> treehash >> treehash;
+	mtree = Tree("", treehash);
+	mtree.createTreeFromObject();
+	return true;
+}
 
