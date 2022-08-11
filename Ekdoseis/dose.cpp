@@ -402,12 +402,18 @@ Dose& Dose::restore() {
 		mindex.fetchFromIndex();
 		for (int i = 4; i < margc; i++) {
 			const fs::path _path = mrootPath / margv[i];
-			mindex.restoreFile(mrootPath / margv[i]);
+			mindex.restoreFile(mrootPath / margv[i],true);
 		}
 	}
 	else {
-		//restore the content of the file to that of latest commit
+		//restore the modified content of the file to that of latest commit
 		//TODO
+		mindex = Index(mrootPath);
+		mindex.fetchFromIndex();
+		for (int i = 3; i < margc; i++) {
+			mindex.restoreFile(mrootPath / margv[i],false);
+		}
+
 
 	}
 

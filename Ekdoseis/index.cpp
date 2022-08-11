@@ -222,7 +222,7 @@ void Index::checkcout(Index & newIndex) {
 	}
 }
 
-void Index::restoreFile(const fs::path & path) {
+void Index::restoreFile(const fs::path & path, bool staged) {
 
 	if (!exists(path)) {
 		cout << "Error: " << path.string() << " doesnot exists." << endl;
@@ -247,27 +247,53 @@ void Index::restoreFile(const fs::path & path) {
 	}
 	else {
 		/*
+		if --staged
 		if the file isnot staged simply return
 		if the file is staged
 		if the file was commited before update the index to point to commited hash
 		else remove from index
+		else if restore
+		if the file is not staged or modified -> return
+		if file is staged update index and restore file
+		if file is modified restore file
+
 		*/
 		auto status = this->getFileStatus(path);
-		if (status != index::FileStatus::STAGED) {
+		if (staged == true && status != index::FileStatus::STAGED) {
+			return;
+		}
+		if (staged == false && (status != index::FileStatus::STAGED && status != index::FileStatus::MODIFIED)) {
 			return;
 		}
 		Commit commit{ this->mrefToRootPath };
 		//load from latest commit
 		if (!commit.loadFromCommitHash()) {
-			//remove from index todo
-			std::erase_if(this->mindexEntries, [path, this](auto entry) {
+			/*
+			if staged remove from Index
+			if not same(nothiing to restore)
+			*/
+			size_t count = std::erase_if(this->mindexEntries, [path, this](auto entry) {
 				return  fs::equivalent(this->mrefToRootPath / entry.fileName, path);
 				});
-			this->mtreeCount--;
-			this->writeToFile();
-			return;
+			if (count == 1) {
+				this->mtreeCount--;
+				this->writeToFile();
+				return;
+			}
+			else
+				return;
 		}
 		else {
+			//you are means the repo was commited previously 
+			/*
+			if staged flag:-> update index only
+			----To update index:
+			--------if the file is in prev commit change its hash to corr hash
+			-------	if the file is not in prev commit, remove from index
+			if not staged flag:-> update index and
+			if the file is in prev commit , update index and its content to that of prev commit
+			if the file is not in prev commit, remove from index, donot touch its content
+			*/
 			//the repo was commited before
 			std::error_code ec;
 			const fs::path relPath = fs::relative(path, mrefToRootPath, ec);
@@ -282,9 +308,25 @@ void Index::restoreFile(const fs::path & path) {
 				return;
 			}
 			else {
+				/*
+				file was in prev commit
+				*/
 				auto found = std::find_if(mindexEntries.begin(), mindexEntries.end(), [path, this](auto entry) {
 					return  fs::equivalent(this->mrefToRootPath / entry.fileName, path);
 					});
+				std::error_code ec;
+				if (staged == false) {
+					fs::copy_file(
+						mrefToRootPath / ".dose/objects/" / hash.substr(0, 2) / hash.substr(2, 40 - 2),
+						path,
+						fs::copy_options::overwrite_existing,
+						ec
+					);
+					if (ec) {
+						cout << "An error occured while restoring the file " << ec.message() << endl;
+						return;
+					}
+				}
 				if (found != mindexEntries.end()) {
 					found->sha1 = hash;
 					found->flag = static_cast<int>(index::IndexFileStatus::COMMITTED);
@@ -294,12 +336,8 @@ void Index::restoreFile(const fs::path & path) {
 					this->writeToFile();
 				}
 			}
-
 		}
-
 	}
-
-
 }
 
 //TODO: work on getFileStatus function
