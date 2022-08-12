@@ -96,3 +96,32 @@ void utils::printDate(uint64_t time) {
 
 }
 
+
+
+utils::ConsoleHandler::ConsoleHandler() {
+	mhandler = GetStdHandle(STD_OUTPUT_HANDLE);
+	GetConsoleScreenBufferInfo(mhandler, &minitialAttr);
+	mbgcolor = FOREGROUND_BLUE;
+	mbgcolor = FOREGROUND_GREEN;
+	mbgcolor = FOREGROUND_RED;
+	mbgcolor = FOREGROUND_INTENSITY;
+	mbgcolor = BACKGROUND_BLUE;
+	mbgcolor = BACKGROUND_GREEN;
+	mbgcolor = BACKGROUND_RED;
+	mbgcolor = BACKGROUND_INTENSITY;
+	mbgcolor = minitialAttr.wAttributes & (~0b1111);
+	std::cout << mbgcolor << endl << endl;
+}
+
+void utils::ConsoleHandler::setColor(WORD color) const {
+	SetConsoleTextAttribute(mhandler, mbgcolor | color);
+}
+void utils::ConsoleHandler::setColor(WORD color, WORD bgcolor) const {
+	SetConsoleTextAttribute(mhandler, bgcolor | color);
+}
+
+void utils::ConsoleHandler::resetColor()const {
+	SetConsoleTextAttribute(mhandler, minitialAttr.wAttributes);
+}
+
+

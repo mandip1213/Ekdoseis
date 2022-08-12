@@ -236,17 +236,37 @@ Dose& Dose::log() {
 	std::string line;
 	std::string hash, author, message;
 	uint64_t time;//time are stroed in 
+
+	utils::ConsoleHandler handler;
+
 	while (std::getline(logFile, line)) {
 		std::istringstream stream{ line };
 		stream.ignore(41, ' ');
 		stream >> hash >> time >> author >> message;
-		cout << "Commit\t" << hash << endl;
-		cout << "Author:\t" << author << endl;
-		cout << "Date: ";
+
+		handler.setColor(14);
+		cout << std::left<<std::setw(10) << "Commit:";
+		handler.setColor(0xA);
+		cout << hash << endl;
+
+		handler.setColor(14);
+		cout << std::left<<std::setw(10) << "Author:";
+		handler.setColor(0xA);
+		cout << author << endl;
+
+		handler.setColor(14);
+		cout << std::left<<std::setw(10) << "Date:";
+		handler.setColor(0xA);
 		utils::printDate(time);
 		cout << endl;
-		cout << "Message:\t" << message << endl;
+
+		handler.setColor(14);
+		cout << std::left<<std::setw(10) << "Message:";
+		handler.setColor(0xA);
+		cout << message << endl;
+		cout << endl << endl;
 	}
+	handler.resetColor();
 	return *this;
 }
 void Dose::addFile(const fs::path& currPath) {
@@ -402,7 +422,7 @@ Dose& Dose::restore() {
 		mindex.fetchFromIndex();
 		for (int i = 4; i < margc; i++) {
 			const fs::path _path = mrootPath / margv[i];
-			mindex.restoreFile(mrootPath / margv[i],true);
+			mindex.restoreFile(mrootPath / margv[i], true);
 		}
 	}
 	else {
@@ -411,7 +431,7 @@ Dose& Dose::restore() {
 		mindex = Index(mrootPath);
 		mindex.fetchFromIndex();
 		for (int i = 3; i < margc; i++) {
-			mindex.restoreFile(mrootPath / margv[i],false);
+			mindex.restoreFile(mrootPath / margv[i], false);
 		}
 
 
@@ -424,7 +444,7 @@ Dose& Dose::restore() {
 //show corresponding commit message if the file is up to date
 //set file attribute while copying to hashed objects and vice versa
 //cannot add multiple files at once//work on deleting and creating dir while checking out
-//
+//add validation for commit message
 
 //work with commited and staged flag in index file and show status accordingly
 
@@ -434,4 +454,5 @@ Dose& Dose::restore() {
 //handle adding existing file as directory
 //handle files not having enough permissions
 //when user add files outside of root directory
+
 
