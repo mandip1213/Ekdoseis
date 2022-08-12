@@ -28,41 +28,57 @@ index::FileStatus Index::getFileStatus(const fs::path& filePath, bool updateInde
 	std::error_code ec;
 	for (auto& entry : mindexEntries) {
 		fs::path fileIndex{ mrefToRootPath / entry.fileName };
-		bool b = fs::equivalent(mrefToRootPath / entry.fileName, filePath, ec);
-		if (fs::equivalent(mrefToRootPath / entry.fileName, filePath, ec)) {
+		bool match = fs::equivalent(mrefToRootPath / entry.fileName, filePath, ec);
+		if (ec) {
+			cout << "An error occured. " << ec.message();
+			exit(EXIT_SUCCESS);
+		}
+		if (match) {
 			//file exists in index file
 			struct _stat filestat;
 			bool _temp = _stat(filePath.string().c_str(), &filestat);//do what with bool 
 			if (entry.modifiedTime == filestat.st_mtime) {
-				//TODO: check for staged or commited
-				if (static_cast<index::IndexFileStatus>(entry.flag) == index::IndexFileStatus::STAGED) {
-					return index::FileStatus::STAGED;
-				}
-				return index::FileStatus::COMMITTED;
-			}
-			else {
-				//in index but modified date donot match
-				//so file is changed
-				//and hence change the modifed date index too and update the index
-				if (updateIndex == true) {
-					SHA1 sha1;
-					std::string hash{ sha1.from_file(filePath.string()) };
-					const fs::path _hashFilePath{ mrefToRootPath / ".dose/objects" / hash.substr(0,2) / hash.substr(2,40 - 2) };
-
-					std::error_code ec;
-					fs::copy_file(filePath, _hashFilePath, fs::copy_options::skip_existing, ec); //no encryption now maybe later
-					if (ec) {
-						cout << "Error: " << ec.message() << endl;
-						cout << "Error: " << "cannot perform the required action" << endl;
-						exit(EXIT_FAILURE);
+				/*
+				if the timestamp is same doesnot means the file is modified(Yeah my messed up design)
+				Now get the hash of latest commit of the file
+				and hash the content of current version
+				if both hash are same then the file isnot modified
+				else file is modified
+				if updateindex=true
+				update the index
+				*/
+				const std::string currHash = SHA1::from_file(filePath.string());
+				const std::string prevHash = entry.sha1;
+				if (currHash == prevHash) {
+					//content is not modified
+					if (static_cast<index::IndexFileStatus>(entry.flag) == index::IndexFileStatus::STAGED) {
+						return index::FileStatus::STAGED;
 					}
-
-					entry.modifiedTime = filestat.st_mtime;
-					entry.sha1 = hash;
-					entry.flag = static_cast<unsigned int>(index::IndexFileStatus::STAGED);
+					return index::FileStatus::COMMITTED;
 				}
-				return  index::FileStatus::MODIFIED;
+				//if content is modified code below this blocck will be executed
+				//TODO: check for staged or commited
 			}
+			//in index but modified
+			//so file is changed
+			//and hence change the modifed date index too and update the index
+			if (updateIndex == true) {
+				std::string hash{ SHA1::from_file(filePath.string()) };
+				const fs::path _hashFilePath{ mrefToRootPath / ".dose/objects" / hash.substr(0,2) / hash.substr(2,40 - 2) };
+
+				std::error_code ec;
+				fs::copy_file(filePath, _hashFilePath, fs::copy_options::skip_existing, ec); //no encryption now maybe later
+				if (ec) {
+					cout << "Error: " << ec.message() << endl;
+					cout << "Error: " << "cannot perform the required action" << endl;
+					exit(EXIT_FAILURE);
+				}
+
+				entry.modifiedTime = filestat.st_mtime;
+				entry.sha1 = hash;
+				entry.flag = static_cast<unsigned int>(index::IndexFileStatus::STAGED);
+			}
+			return  index::FileStatus::MODIFIED;
 		}
 	}
 	return index::FileStatus::UNTRACKED;
