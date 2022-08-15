@@ -20,10 +20,6 @@ namespace utils {
 	uint64_t getTime();
 	void printDate(uint64_t time);
 
-	enum class Color {
-
-
-	};
 	class ConsoleHandler {
 	private:
 		HANDLE mhandler;
@@ -36,23 +32,23 @@ namespace utils {
 		void setColor(WORD color, WORD bgcolor) const;
 		void resetColor()const;
 	};
-}
-/*
- BLACK 	0
- DARK_RED 4
- DARK_GREEN █			2
- DARK_YELLOW █			6
- DARK_BLUE █			1
- DARK_MAGENTA █			5
- DARK_CYAN █			3
- DARK_WHITE █			7
- BRIGHT_BLACK █			8
- BRIGHT_RED █			C
- BRIGHT_GREEN █			A
- BRIGHT_YELLOW █			E
- BRIGHT_BLUE █			9
- BRIGHT_MAGENTA █			D
- BRIGHT_CYAN █			B
- WHITE █			F
+	enum class Color {
+		BLACK = 0,
+		DARK_BLUE = 1,
+		DARK_GREEN = 2,
+		DARK_CYAN = 3,
+		DARK_RED = 4,
+		DARK_MAGENTA = 5,
+		DARK_YELLOW = 6,
+		DARK_WHITE = 7,
+		BRIGHT_BLACK = 8,
+		BRIGHT_BLUE = 9,
+		BRIGHT_GREEN = 0xA,
+		BRIGHT_CYAN = 0xB,
+		BRIGHT_RED = 0xC,
+		BRIGHT_MAGENTA = 0xD,
+		BRIGHT_YELLOW = 0xE,
+		WHITE = 0xF,
+	};
+};
 
-*/

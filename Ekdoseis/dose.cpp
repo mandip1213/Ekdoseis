@@ -242,26 +242,27 @@ Dose& Dose::log() {
 	while (std::getline(logFile, line)) {
 		std::istringstream stream{ line };
 		stream.ignore(41, ' ');
-		stream >> hash >> time >> author >> message;
+		stream >> hash >> time >> author;
+		std::getline(stream >> std::ws, message);
 
 		handler.setColor(14);
-		cout << std::left<<std::setw(10) << "Commit:";
+		cout << std::left << std::setw(10) << "Commit:";
 		handler.setColor(0xA);
 		cout << hash << endl;
 
 		handler.setColor(14);
-		cout << std::left<<std::setw(10) << "Author:";
+		cout << std::left << std::setw(10) << "Author:";
 		handler.setColor(0xA);
 		cout << author << endl;
 
 		handler.setColor(14);
-		cout << std::left<<std::setw(10) << "Date:";
+		cout << std::left << std::setw(10) << "Date:";
 		handler.setColor(0xA);
 		utils::printDate(time);
 		cout << endl;
 
 		handler.setColor(14);
-		cout << std::left<<std::setw(10) << "Message:";
+		cout << std::left << std::setw(10) << "Message:";
 		handler.setColor(0xA);
 		cout << message << endl;
 		cout << endl << endl;
