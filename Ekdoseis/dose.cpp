@@ -92,6 +92,9 @@ void Dose::errorExit() {
 
 Dose& Dose::init() {
 	//LINK:https://git-scm.com/docs/git-init
+
+	utils::ConsoleHandler handler;
+	handler.setColor(0xA);
 	cout << "initializing empty ekdoseis repo in " << mrootPath << endl;
 	ReturnFlag _rflag = createDirectory(".dose");
 	if (_rflag == ALREADY_EXISTS) {
@@ -102,6 +105,7 @@ Dose& Dose::init() {
 		cout << "Error: couldnot initialize Ekdoseis repo on " << mrootPath << endl;
 		exit(EXIT_FAILURE);
 	}
+	handler.resetColor();
 	bool _s = SetFileAttributesA((mrootPath / ".dose").string().c_str(), FILE_ATTRIBUTE_HIDDEN);//for hiding the folder
 	ReturnFlag _r1 = createDirectory(".dose/objects");
 	if (_r1 != CREATE_SUCCESS)errorExit();
@@ -116,7 +120,6 @@ Dose& Dose::init() {
 	headptr << "ref: refs/heads/main" << endl;
 	_headf.close();
 	headptr.close();
-	utils::ConsoleHandler handler;
 	handler.setColor(0xA);
 	cout << "Successfully Initialized empty repo in" << *this << endl;
 	handler.resetColor();
@@ -284,6 +287,9 @@ Dose& Dose::log() {
 	return *this;
 }
 void Dose::addFile(const fs::path& currPath) {
+
+	utils::ConsoleHandler handler;
+	handler.setColor(0xA);
 	if (!exists(currPath)) {
 		cout << "Error: " << currPath.string() << " doesnot exists." << endl;
 		return;
@@ -294,6 +300,8 @@ void Dose::addFile(const fs::path& currPath) {
 		return;
 		//exit(EXIT_FAILURE);
 	}
+
+	handler.resetColor();
 	if (fs::is_directory(currPath)) {
 		using iterator = fs::recursive_directory_iterator;
 		for (iterator i = fs::recursive_directory_iterator(currPath);
