@@ -116,13 +116,16 @@ Dose& Dose::init() {
 	headptr << "ref: refs/heads/main" << endl;
 	_headf.close();
 	headptr.close();
+	utils::ConsoleHandler handler;
+	handler.setColor(0xA);
 	cout << "Successfully Initialized empty repo in" << *this << endl;
-
+	handler.resetColor();
 	return *this;
 }
 Dose& Dose::commit() {
 
-
+	utils::ConsoleHandler handler;
+	handler.setColor(0xA);
 	if (margc >= 5) {
 		if (!strcmp(margv[4], "-m")) {
 			std::cerr << "Error: Invalid Command" << endl;
@@ -131,6 +134,7 @@ Dose& Dose::commit() {
 	else {
 		std::cerr << "Error: Not enough arguments" << endl;
 	}
+	handler.resetColor();
 	Commit commit{ mrootPath };
 	commit.setMessage(margv[4]);
 	commit.createTree();
@@ -202,26 +206,36 @@ Dose& Dose::status() {
 		//std::cout << p.filename() << "    " << endl;
 		//cout << i->path()<<endl;
 	}
+	utils::ConsoleHandler handler;
 	cout << endl << endl;
+	handler.setColor(0xA);
 	cout << "committed: " << endl;
+	handler.setColor(14);
 	for (auto it : committed) {
 		std::cout << it << "    " << endl;
 	}
 	cout << endl << endl;
+	handler.setColor(0xA);
 	cout << "staged: " << endl;
+	handler.setColor(14);
 	for (auto it : staged) {
 		std::cout << it << "    " << endl;
 	}
 	cout << endl << endl;
+	handler.setColor(0xA);
 	cout << "modified: " << endl;
+	handler.setColor(14);
 	for (auto it : modified) {
 		std::cout << it << "    " << endl;
 	}
 	cout << endl << endl;
+	handler.setColor(0xA);
 	cout << "untracked: " << endl;
+	handler.setColor(14);
 	for (auto it : untracked) {
 		std::cout << it << "    " << endl;
 	}
+	handler.resetColor();
 	return *this;
 }
 Dose& Dose::log() {
@@ -238,7 +252,6 @@ Dose& Dose::log() {
 	uint64_t time;//time are stroed in 
 
 	utils::ConsoleHandler handler;
-
 	while (std::getline(logFile, line)) {
 		std::istringstream stream{ line };
 		stream.ignore(41, ' ');
