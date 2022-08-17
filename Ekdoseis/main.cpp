@@ -7,11 +7,11 @@ int main(int argc, const char* argv[])
 {
 	if (argc < 3) {
 		cout << "error: not enough argument" << endl;
-		//return EXIT_FAILURE;
+		//return EXIT_SUCCESS;
 	}
 	if (argc > 10) {
 		cout << "Too many arguments" << endl;
-		//return EXIT_FAILURE;
+		//return EXIT_SUCCESS;
 	}
 	//std::error_code ec;
 	//fs::path p1{ "C:\\Users\\mandip\\Desktop\\git\\a\\c\\chello\ -\ Copy.txt" };

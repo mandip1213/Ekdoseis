@@ -19,20 +19,9 @@ namespace utils {
 	bool validateHash(const std::string& hash);
 	uint64_t getTime();
 	void printDate(uint64_t time);
-
-	class ConsoleHandler {
-	private:
-		HANDLE mhandler;
-		_CONSOLE_SCREEN_BUFFER_INFO minitialAttr;
-		WORD mbgcolor = BACKGROUND_INTENSITY;
-	public:
-		ConsoleHandler();
-
-		void setColor(WORD color) const;
-		void setColor(WORD color, WORD bgcolor) const;
-		void resetColor()const;
-	};
+	 void printError(const std::string& message);
 	enum class Color {
+
 		BLACK = 0,
 		DARK_BLUE = 1,
 		DARK_GREEN = 2,
@@ -50,5 +39,24 @@ namespace utils {
 		BRIGHT_YELLOW = 0xE,
 		WHITE = 0xF,
 	};
+
+	
+	class ConsoleHandler {
+	private:
+		HANDLE mhandler;
+		_CONSOLE_SCREEN_BUFFER_INFO minitialAttr;
+		WORD mbgcolor = BACKGROUND_INTENSITY;
+	public:
+		ConsoleHandler();
+		~ConsoleHandler();
+
+		void setColor(WORD color) const;
+		void setColor(WORD color, WORD bgcolor) const;
+		void resetColor()const;
+		void setColor(utils::Color color) const;
+		void setColor(utils::Color color, utils::Color bgcolor) const;
+	
+	};
+	
 };
 

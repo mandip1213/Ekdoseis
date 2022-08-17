@@ -14,7 +14,7 @@ int utils::getHex(char c) {
 
 void utils::toHexEncoding(std::string hash, unsigned char* ptr, int len) {
 	if (hash.size() != 40) {
-		exit(EXIT_FAILURE);
+		exit(EXIT_SUCCESS);
 		return;
 	}
 	uint8_t byte{};
@@ -62,13 +62,13 @@ ReturnFlag utils::createObjectDir(const fs::path& newDir, CreateFlag flag) {
 bool utils::validateHash(const std::string& hash) {
 	if (hash.length() != 40) {
 		std::cerr << "Invalid Hash" << endl;
-		exit(EXIT_FAILURE);
+		exit(EXIT_SUCCESS);
 		//return false;
 	}
 	for (const auto& curr : hash) {
 		if (!((curr >= 'a' && curr <= 'f') || isdigit(curr))) {
 			std::cerr << "Invalid Hash" << endl;
-			exit(EXIT_FAILURE);
+			exit(EXIT_SUCCESS);
 			//return false;
 		}
 	}
@@ -97,22 +97,23 @@ void utils::printDate(uint64_t time) {
 }
 
 
+void utils::printError(const std::string& message) {
+	utils::ConsoleHandler handler;
+	handler.setColor(utils::Color::BRIGHT_RED);
+	std::cerr << message;
+
+}
 
 utils::ConsoleHandler::ConsoleHandler() {
 	mhandler = GetStdHandle(STD_OUTPUT_HANDLE);
 	GetConsoleScreenBufferInfo(mhandler, &minitialAttr);
-	mbgcolor = FOREGROUND_BLUE;
-	mbgcolor = FOREGROUND_GREEN;
-	mbgcolor = FOREGROUND_RED;
-	mbgcolor = FOREGROUND_INTENSITY;
-	mbgcolor = BACKGROUND_BLUE;
-	mbgcolor = BACKGROUND_GREEN;
-	mbgcolor = BACKGROUND_RED;
-	mbgcolor = BACKGROUND_INTENSITY;
+
 	mbgcolor = minitialAttr.wAttributes & (~0b1111);
 	std::cout << mbgcolor << endl << endl;
 }
-
+utils::ConsoleHandler::~ConsoleHandler() {
+	resetColor();
+}
 void utils::ConsoleHandler::setColor(WORD color) const {
 	SetConsoleTextAttribute(mhandler, mbgcolor | color);
 }
@@ -122,6 +123,12 @@ void utils::ConsoleHandler::setColor(WORD color, WORD bgcolor) const {
 
 void utils::ConsoleHandler::resetColor()const {
 	SetConsoleTextAttribute(mhandler, minitialAttr.wAttributes);
+}
+void utils::ConsoleHandler::setColor(utils::Color color) const {
+	setColor(static_cast<WORD>(color));
+}
+void utils::ConsoleHandler::setColor(utils::Color color, utils::Color bgcolor) const {
+	setColor(static_cast<WORD>(color), static_cast<WORD>(mbgcolor));
 }
 
 

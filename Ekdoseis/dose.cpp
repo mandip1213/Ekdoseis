@@ -47,7 +47,7 @@ Dose& Dose::parseRootCommand() {
 	}
 	else {
 		cout << "Error:" << *this << "doesnot exist" << endl;
-		exit(EXIT_FAILURE);
+		exit(EXIT_SUCCESS);
 	}
 	fs::current_path(arg_path);//change current path to arg_path
 	return *this;
@@ -87,14 +87,14 @@ ReturnFlag Dose::createDirectory(const std::string_view& dirName, CreateFlag fla
 }
 void Dose::errorExit() {
 	cout << *this << "An error occured" << endl;
-	exit(EXIT_FAILURE);
+	exit(EXIT_SUCCESS);
 }
 
 Dose& Dose::init() {
 	//LINK:https://git-scm.com/docs/git-init
 
 	utils::ConsoleHandler handler;
-	handler.setColor(0xA);
+	handler.setColor(utils::Color::BRIGHT_GREEN);
 	cout << "initializing empty ekdoseis repo in " << mrootPath << endl;
 	ReturnFlag _rflag = createDirectory(".dose");
 	if (_rflag == ALREADY_EXISTS) {
@@ -103,7 +103,7 @@ Dose& Dose::init() {
 	}
 	if (_rflag == CREATE_FAILURE) {
 		cout << "Error: couldnot initialize Ekdoseis repo on " << mrootPath << endl;
-		exit(EXIT_FAILURE);
+		exit(EXIT_SUCCESS);
 	}
 	handler.resetColor();
 	bool _s = SetFileAttributesA((mrootPath / ".dose").string().c_str(), FILE_ATTRIBUTE_HIDDEN);//for hiding the folder
@@ -120,7 +120,7 @@ Dose& Dose::init() {
 	headptr << "ref: refs/heads/main" << endl;
 	_headf.close();
 	headptr.close();
-	handler.setColor(0xA);
+	handler.setColor(utils::Color::BRIGHT_GREEN);
 	cout << "Successfully Initialized empty repo in" << *this << endl;
 	handler.resetColor();
 	return *this;
@@ -128,7 +128,7 @@ Dose& Dose::init() {
 Dose& Dose::commit() {
 
 	utils::ConsoleHandler handler;
-	handler.setColor(0xA);
+	handler.setColor(utils::Color::BRIGHT_GREEN);
 	if (margc >= 5) {
 		if (!strcmp(margv[4], "-m")) {
 			std::cerr << "Error: Invalid Command" << endl;
@@ -211,30 +211,30 @@ Dose& Dose::status() {
 	}
 	utils::ConsoleHandler handler;
 	cout << endl << endl;
-	handler.setColor(0xA);
+	handler.setColor(utils::Color::BRIGHT_GREEN);
 	cout << "committed: " << endl;
-	handler.setColor(14);
+	handler.setColor(utils::Color::BRIGHT_YELLOW);
 	for (auto it : committed) {
 		std::cout << it << "    " << endl;
 	}
 	cout << endl << endl;
-	handler.setColor(0xA);
+	handler.setColor(utils::Color::BRIGHT_GREEN);
 	cout << "staged: " << endl;
-	handler.setColor(14);
+	handler.setColor(utils::Color::BRIGHT_YELLOW);
 	for (auto it : staged) {
 		std::cout << it << "    " << endl;
 	}
 	cout << endl << endl;
-	handler.setColor(0xA);
+	handler.setColor(utils::Color::BRIGHT_GREEN);
 	cout << "modified: " << endl;
-	handler.setColor(14);
+	handler.setColor(utils::Color::BRIGHT_YELLOW);
 	for (auto it : modified) {
 		std::cout << it << "    " << endl;
 	}
 	cout << endl << endl;
-	handler.setColor(0xA);
+	handler.setColor(utils::Color::BRIGHT_GREEN);
 	cout << "untracked: " << endl;
-	handler.setColor(14);
+	handler.setColor(utils::Color::BRIGHT_YELLOW);
 	for (auto it : untracked) {
 		std::cout << it << "    " << endl;
 	}
@@ -261,25 +261,25 @@ Dose& Dose::log() {
 		stream >> hash >> time >> author;
 		std::getline(stream >> std::ws, message);
 
-		handler.setColor(14);
+		handler.setColor(utils::Color::BRIGHT_YELLOW);
 		cout << std::left << std::setw(10) << "Commit:";
-		handler.setColor(0xA);
+		handler.setColor(utils::Color::BRIGHT_GREEN);
 		cout << hash << endl;
 
-		handler.setColor(14);
+		handler.setColor(utils::Color::BRIGHT_YELLOW);
 		cout << std::left << std::setw(10) << "Author:";
-		handler.setColor(0xA);
+		handler.setColor(utils::Color::BRIGHT_GREEN);
 		cout << author << endl;
 
-		handler.setColor(14);
+		handler.setColor(utils::Color::BRIGHT_YELLOW);
 		cout << std::left << std::setw(10) << "Date:";
-		handler.setColor(0xA);
+		handler.setColor(utils::Color::BRIGHT_GREEN);
 		utils::printDate(time);
 		cout << endl;
 
-		handler.setColor(14);
+		handler.setColor(utils::Color::BRIGHT_YELLOW);
 		cout << std::left << std::setw(10) << "Message:";
-		handler.setColor(0xA);
+		handler.setColor(utils::Color::BRIGHT_GREEN);
 		cout << message << endl;
 		cout << endl << endl;
 	}
@@ -289,16 +289,16 @@ Dose& Dose::log() {
 void Dose::addFile(const fs::path& currPath) {
 
 	utils::ConsoleHandler handler;
-	handler.setColor(0xA);
+	handler.setColor(utils::Color::BRIGHT_GREEN);
 	if (!exists(currPath)) {
 		cout << "Error: " << currPath.string() << " doesnot exists." << endl;
 		return;
-		//exit(EXIT_FAILURE);
+		//exit(EXIT_SUCCESS);
 	}
 	if (doseIgnore.has(currPath)) {
 		cout << " debug Error: " << currPath << " already exists in the doseignore." << endl;
 		return;
-		//exit(EXIT_FAILURE);
+		//exit(EXIT_SUCCESS);
 	}
 
 	handler.resetColor();
@@ -338,7 +338,7 @@ void Dose::addFile(const fs::path& currPath) {
 		ReturnFlag _rf1 = createDirectory(hashDirPath.string());
 		if (!(_rf1 == CREATE_SUCCESS || _rf1 == ALREADY_EXISTS)) {
 			cout << "Error: " << "cannot perform the required action" << endl;
-			exit(EXIT_FAILURE);
+			exit(EXIT_SUCCESS);
 		}
 
 		const fs::path _hashFilePath{ hashDirPath / hash.substr(2,hashLength - 2) };
@@ -348,7 +348,7 @@ void Dose::addFile(const fs::path& currPath) {
 		if (ec) {
 			cout << "Error: " << ec.message() << endl;
 			cout << "Error: " << "cannot perform the required action" << endl;
-			exit(EXIT_FAILURE);
+			exit(EXIT_SUCCESS);
 		}
 		bool badd = mindex.add(currPath, hash);
 		if (badd) {

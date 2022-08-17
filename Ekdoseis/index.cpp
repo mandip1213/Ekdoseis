@@ -1,6 +1,7 @@
 #include<algorithm>
 #include "index.h"
 #include "sha1.h"
+#include "utils.h"
 
 //namespace fs = std::filesystem;
 using std::cerr, std::cout;
@@ -10,8 +11,10 @@ void Index::fetchFromIndex() {
 	}
 	std::ifstream indexiptr{ mindexPath };
 	if (!indexiptr) {
-		cerr << "Error: " << "cannot open index file" << endl;
-		exit(EXIT_FAILURE);
+		std::stringstream errmsg;
+		errmsg << "Error: " << "cannot open index file" << endl;
+		utils::printError(errmsg.str());
+		exit(EXIT_SUCCESS);
 	}
 	indexiptr >> mtreeCount;
 	indexiptr.ignore(1);//ignore a new line
@@ -30,7 +33,9 @@ index::FileStatus Index::getFileStatus(const fs::path& filePath, bool updateInde
 		fs::path fileIndex{ mrefToRootPath / entry.fileName };
 		bool match = fs::equivalent(mrefToRootPath / entry.fileName, filePath, ec);
 		if (ec) {
-			cout << "An error occured. " << ec.message();
+			std::stringstream errmsg;
+			errmsg<< "An error occured. " << ec.message();
+			utils::printError(errmsg.str());
 			exit(EXIT_SUCCESS);
 		}
 		if (match) {
@@ -69,9 +74,11 @@ index::FileStatus Index::getFileStatus(const fs::path& filePath, bool updateInde
 				std::error_code ec;
 				fs::copy_file(filePath, _hashFilePath, fs::copy_options::skip_existing, ec); //no encryption now maybe later
 				if (ec) {
-					cout << "Error: " << ec.message() << endl;
-					cout << "Error: " << "cannot perform the required action" << endl;
-					exit(EXIT_FAILURE);
+					std::stringstream msg;
+					msg << "Error: " << ec.message() << endl;
+					msg << "Error: " << "cannot perform the required action" << endl;
+					utils::printError(msg.str());
+					exit(EXIT_SUCCESS);
 				}
 
 				entry.modifiedTime = filestat.st_mtime;
@@ -146,10 +153,15 @@ bool Index::add(const fs::path & filePath, const std::string & hash) {
 		return true;
 	}
 	if (fileStatus == COMMITTED) {
+
+		utils::ConsoleHandler handler;
+		handler.setColor(utils::Color::BRIGHT_BLUE);
 		cout << "nothing to add in file " << filePath << endl;
 		return false;
 	}
 	if (fileStatus == STAGED) {
+		utils::ConsoleHandler handler;
+		handler.setColor(utils::Color::BRIGHT_BLUE);
 		cout << "file: " << filePath << " is already staged" << endl;
 		return false;
 	}
@@ -158,8 +170,12 @@ bool Index::add(const fs::path & filePath, const std::string & hash) {
 	std::error_code ec;
 	fs::path relativePath = fs::relative(filePath, mrefToRootPath, ec);
 	if (ec) {
-		std::cerr << "Error: cannot stage " << filePath.string() << endl;
-		exit(EXIT_FAILURE);
+		std::stringstream errmsg;
+		errmsg<< "Error: cannot stage " << filePath.string() << endl;
+		utils::printError(errmsg.str());
+		
+
+		(EXIT_SUCCESS);
 		return false;
 	}
 	std::string str = relativePath.string();
@@ -243,7 +259,7 @@ void Index::restoreFile(const fs::path & path, bool staged) {
 	if (!exists(path)) {
 		cout << "Error: " << path.string() << " doesnot exists." << endl;
 		return;
-		//exit(EXIT_FAILURE);
+		//exit(EXIT_SUCCESS);
 	}
 	if (fs::is_directory(path)) {
 		using iterator = fs::recursive_directory_iterator;
