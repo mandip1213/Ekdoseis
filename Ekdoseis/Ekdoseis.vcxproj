@@ -141,6 +141,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="branch.cpp" />
     <ClCompile Include="commit.cpp" />
     <ClCompile Include="dose.cpp" />
     <ClCompile Include="index.cpp" />
@@ -153,6 +154,7 @@
     <ClCompile Include="utils.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="branch.h" />
     <ClInclude Include="commit.h" />
     <ClInclude Include="dose.h" />
     <ClInclude Include="blob.h" />

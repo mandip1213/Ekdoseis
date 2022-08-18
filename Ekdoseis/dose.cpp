@@ -1,10 +1,12 @@
 ﻿#include<iostream>
 #include<fstream>
+#include<sstream>
 #include<windows.h>//for fileapi.h
 #include<fileapi.h>
 #include"dose.h"
 #include"commit.h"
 #include"utils.h"
+#include"branch.h"
 #define endl '\n'
 //0- root command name//dose 
 //1- location from which comman is called
@@ -16,7 +18,6 @@ Dose::Dose(int n, const char* ptr[]) :margc{ n }, margv{ ptr } {
 }
 std::ostream& operator<<(std::ostream& out, const Dose& dose) {
 	out << " command 'dose " << dose.margv[2] << "' ";
-
 	return out;
 }
 #include "SHA1.h"
@@ -45,9 +46,14 @@ Dose& Dose::parseRootCommand() {
 	else if (strcmp(arg_cmd, "checkout") == 0) {
 		mcommand = CHECKOUT;
 	}
+	else if (strcmp(arg_cmd, "branch") == 0) {
+		mcommand = BRANCH;
+	}
 	else {
-		cout << "Error:" << *this << "doesnot exist" << endl;
-		exit(EXIT_SUCCESS);
+		std::stringstream errmsg;
+		errmsg << "Error:" << *this << "doesnot exist" << endl;
+		utils::printError(errmsg.str());
+		(EXIT_SUCCESS);
 	}
 	fs::current_path(arg_path);//change current path to arg_path
 	return *this;
@@ -61,6 +67,7 @@ Dose& Dose::execCommand() {
 	case LOG: log(); break;
 	case CHECKOUT: checkout(); break;
 	case RESTORE:restore(); break;
+	case BRANCH:branch(); break;
 	}
 	return *this;
 }
@@ -91,6 +98,7 @@ void Dose::errorExit() {
 }
 
 Dose& Dose::init() {
+	const std::string defaultBranchName = "main";
 	//LINK:https://git-scm.com/docs/git-init
 
 	utils::ConsoleHandler handler;
@@ -113,11 +121,11 @@ Dose& Dose::init() {
 	if (_r2 != CREATE_SUCCESS)errorExit();
 	ReturnFlag _r3 = createDirectory(".dose/refs/heads");
 	if (_r3 != CREATE_SUCCESS)errorExit();
-	std::ofstream _headf{ (mrootPath / ".dose/refs/heads/main") };
+	std::ofstream _headf{ (mrootPath / ".dose/refs/heads" / defaultBranchName) };
 	if (!(_headf))errorExit();
 	std::ofstream headptr{ mrootPath / ".dose/HEAD" };
 	if (!headptr)errorExit();
-	headptr << "ref: refs/heads/main" << endl;
+	headptr << "ref: refs/heads/" << defaultBranchName << endl;
 	_headf.close();
 	headptr.close();
 	handler.setColor(utils::Color::BRIGHT_GREEN);
@@ -242,7 +250,11 @@ Dose& Dose::status() {
 	return *this;
 }
 Dose& Dose::log() {
-	cout << "Logging: " << endl;
+
+	/*
+	-currently log is only for branch main
+	- todo: implement for detached head state
+	*/
 
 	std::ifstream logFile{ mrootPath / ".dose/logs/refs/main" };
 	if (!logFile) {
@@ -376,16 +388,34 @@ Dose& Dose::add() {
 	return *this;
 }
 Dose& Dose::checkout() {
+	/*
+	if the checkout point is branch
+	if the checkout pointis branchless commit f
+	To checkout:
+	-- create a tree corresponding to given commit
+	-- update the index and update the working directroy
+	-- update the HEAD
+	*/
 
-	std::string checkoutPoint{ margv[3] };
+	const 	std::string checkoutPoint{ margv[3] };
+	std::string checkoutCommit;
 
 	mindex = Index{ mrootPath };
 	mindex.fetchFromIndex();
-	if (isBranch(checkoutPoint)) {
+	cout << checkoutPoint << " c" << endl;
+	if (Branch::isBranch(checkoutPoint)) {
+		cout << "YEs man this is my branch" << endl;
+		std::ifstream branchfptr{ mrootPath / ".dose/refs/heads" / checkoutPoint };
+		branchfptr >> checkoutCommit;
+		//TODO BRANCH
 		//implement if implemented branching
 	}
-	else if (isValidCommit(checkoutPoint)) {
-		const fs::path  objPath = mrootPath / ".dose/objects" / checkoutPoint.substr(0, 2) / checkoutPoint.substr(2, 40 - 2);
+	else {
+		checkoutCommit = checkoutPoint;
+	}
+
+	if (isValidCommit(checkoutCommit)) {
+		const fs::path  objPath = mrootPath / ".dose/objects" / checkoutCommit.substr(0, 2) / checkoutCommit.substr(2, 40 - 2);
 		std::ifstream commitiptr{ objPath };
 		std::string treehash;
 		commitiptr >> treehash >> treehash;
@@ -396,12 +426,9 @@ Dose& Dose::checkout() {
 		Index newIndex{ mrootPath };
 		newTree.createNewIndex(newIndex);//passed as reference
 		this->mindex.checkcout(newIndex);
-
+		Dose::updateHead(mrootPath, checkoutPoint);
 		//for (auto& entries : newIndex.mindexEntries)
 	}
-
-
-
 	return *this;
 }
 bool Dose::isValidCommit(const std::string& ch_point) {
@@ -427,13 +454,6 @@ bool Dose::isValidCommit(const std::string& ch_point) {
 	return false;
 }
 
-bool Dose::isBranch(const std::string& ch_point) {
-	//for (auto const& currBranch : fs::directory_iterator{ mrootPath / ".dose/refs/heads" }) {
-		//cout << currBranch.file_name<<endl;
-		//cout << "df";
-	//}
-	return false;
-}
 
 Dose& Dose::restore() {
 	//0 command 1 location 2 root command
@@ -458,6 +478,49 @@ Dose& Dose::restore() {
 
 
 	}
+
+	return *this;
+}
+
+void Dose::updateHead(const fs::path& rootPath, const std::string& reference) {
+	std::ofstream headfptr{ rootPath / ".dose/HEAD" };
+	if (!headfptr) {
+		utils::printError("Head donot exist");
+		exit(EXIT_SUCCESS);
+		//TODO: MUST if head donot exist undo all the actions and exit 
+	}
+	if (Branch::isBranch(reference))
+	{
+		headfptr << "ref: refs/heads/" << reference;
+		return;
+	}
+	headfptr << reference;
+}
+
+Dose& Dose::branch() {
+	//return *this;
+	if (margv[3] == "--list" || margv[3] == "-l") {
+
+	}
+	else if (margv[3] == "--delete" || margv[3] == "-d") {
+
+	}
+	else if (*margv[3] != '-') {
+		if (margc > 4) {
+			//exit
+			exit(EXIT_SUCCESS);
+		}
+		Branch branch{ margv[3] };
+		if (margc == 3)
+			branch.createBranch();
+		else  if (margc == 4)
+			branch.createBranch(margv[4]);
+		else {
+
+		}
+	}
+
+
 
 
 	return *this;

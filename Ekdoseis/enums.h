@@ -19,6 +19,7 @@ enum DoseCommand {
 	LOG,
 	CHECKOUT,
 	RESTORE,
+	BRANCH,
 	NOCOMMAND,
 
 };

@@ -33,6 +33,7 @@ public:
 	Dose(int n, const  char* ptr[]);
 	friend	 std::ostream& operator<<(std::ostream& out, const Dose& dose);
 	void addFile(const fs::path& filePath);
+	static void  updateHead(const fs::path& rootPath, const std::string& reference);
 	Dose& parseRootCommand();
 	Dose& execCommand();
 	Dose& init();
@@ -42,6 +43,7 @@ public:
 	Dose& log();
 	Dose& checkout();
 	Dose& restore();
+	Dose& branch();
 	friend	void parseCommand(int argc, char* argv[], std::vector<struct Token> tokenList);
 };
 #endif

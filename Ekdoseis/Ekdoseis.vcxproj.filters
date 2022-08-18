@@ -45,6 +45,9 @@
     <ClCompile Include="tree.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="branch.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="parser.h">
@@ -75,6 +78,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="commit.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="branch.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
