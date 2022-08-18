@@ -3,6 +3,7 @@
 #include<sstream>
 #include<windows.h>//for fileapi.h
 #include<fileapi.h>
+#include<algorithm>
 #include"dose.h"
 #include"commit.h"
 #include"utils.h"
@@ -53,7 +54,7 @@ Dose& Dose::parseRootCommand() {
 		std::stringstream errmsg;
 		errmsg << "Error:" << *this << "doesnot exist" << endl;
 		utils::printError(errmsg.str());
-		(EXIT_SUCCESS);
+		exit(EXIT_SUCCESS);
 	}
 	fs::current_path(arg_path);//change current path to arg_path
 	return *this;
@@ -403,7 +404,7 @@ Dose& Dose::checkout() {
 	mindex = Index{ mrootPath };
 	mindex.fetchFromIndex();
 	cout << checkoutPoint << " c" << endl;
-	if (Branch::isBranch(checkoutPoint)) {
+	if (Branch::isBranch(mrootPath, checkoutPoint)) {
 		cout << "YEs man this is my branch" << endl;
 		std::ifstream branchfptr{ mrootPath / ".dose/refs/heads" / checkoutPoint };
 		branchfptr >> checkoutCommit;
@@ -454,7 +455,6 @@ bool Dose::isValidCommit(const std::string& ch_point) {
 	return false;
 }
 
-
 Dose& Dose::restore() {
 	//0 command 1 location 2 root command
 
@@ -489,7 +489,7 @@ void Dose::updateHead(const fs::path& rootPath, const std::string& reference) {
 		exit(EXIT_SUCCESS);
 		//TODO: MUST if head donot exist undo all the actions and exit 
 	}
-	if (Branch::isBranch(reference))
+	if (Branch::isBranch(rootPath, reference))
 	{
 		headfptr << "ref: refs/heads/" << reference;
 		return;
@@ -498,31 +498,51 @@ void Dose::updateHead(const fs::path& rootPath, const std::string& reference) {
 }
 
 Dose& Dose::branch() {
-	//return *this;
-	if (margv[3] == "--list" || margv[3] == "-l") {
+	//if(margc>5)
+	if (margc == 3 || strcmp(margv[3], "--list") == 0 || strcmp(margv[3], "-l") == 0 && margc < 5) {
+		Branch::listBranch(mrootPath);
 
 	}
-	else if (margv[3] == "--delete" || margv[3] == "-d") {
-
+	else if (strcmp(margv[3], "--delete") == 0 || strcmp(margv[3], "-d") == 0) {
+		if (margc == 4) {
+			utils::printError("ERROR: branch name is required\n");
+		}
+		for (int i = 4; i < margc; i++) {
+			Branch branch{ mrootPath,margv[i] };
+			branch.deleteBranch();
+		}
 	}
 	else if (*margv[3] != '-') {
 		if (margc > 4) {
 			//exit
 			exit(EXIT_SUCCESS);
 		}
-		Branch branch{ margv[3] };
-		if (margc == 3)
+		const std::string branchName = margv[3];
+		const bool isValidBranchName = std::all_of(branchName.begin(), branchName.end(), [](char c) {
+			return std::isalpha(c);
+			});
+		if (!isValidBranchName) {
+			std::stringstream errmsg;
+			errmsg << "'" << branchName << "'" << " is not a valid branch Name" << endl;
+			utils::printError(errmsg.str());
+			exit(EXIT_SUCCESS);
+		}
+		Branch branch{ mrootPath, branchName };
+		if (margc == 4)
 			branch.createBranch();
-		else  if (margc == 4)
+		else  if (margc == 5)
 			branch.createBranch(margv[4]);
 		else {
 
 		}
 	}
-
-
-
-
+	else {
+		const std::array<utils::StringColorPair, 2> arr{ {
+			{"ERROR: Illegal Argument: ", utils::Color::BRIGHT_RED},
+			{std::string{"'"} + margv[3] + "'",utils::Color::BRIGHT_YELLOW},
+			} };
+		utils::printColorful(arr);
+	}
 	return *this;
 }
 //TODO:
@@ -532,6 +552,7 @@ Dose& Dose::branch() {
 //add validation for commit message
 
 //work with commited and staged flag in index file and show status accordingly
+//validate rootPath
 
 //see and read:
 //locking file 
@@ -539,5 +560,6 @@ Dose& Dose::branch() {
 //handle adding existing file as directory
 //handle files not having enough permissions
 //when user add files outside of root directory
+//
 
 

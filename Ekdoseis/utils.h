@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include<iostream>
 #include<string>
 #include<iostream>
 #include<filesystem>
@@ -19,9 +20,9 @@ namespace utils {
 	bool validateHash(const std::string& hash);
 	uint64_t getTime();
 	void printDate(uint64_t time);
-	 void printError(const std::string& message);
-	enum class Color {
+	void printError(const std::string& message);
 
+	enum class Color {
 		BLACK = 0,
 		DARK_BLUE = 1,
 		DARK_GREEN = 2,
@@ -40,7 +41,7 @@ namespace utils {
 		WHITE = 0xF,
 	};
 
-	
+
 	class ConsoleHandler {
 	private:
 		HANDLE mhandler;
@@ -55,8 +56,20 @@ namespace utils {
 		void resetColor()const;
 		void setColor(utils::Color color) const;
 		void setColor(utils::Color color, utils::Color bgcolor) const;
-	
+
 	};
-	
+
+
+	using StringColorPair = std::pair<std::string, Color>;
+
+	template<size_t size>
+	inline 	void printColorful(const std::array <StringColorPair, size>& array) {
+		ConsoleHandler handler;
+		for (const auto& pair : array) {
+			handler.setColor(pair.second);
+			std::cout << pair.first;
+		}
+	}
+
 };
 

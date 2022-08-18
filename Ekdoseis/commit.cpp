@@ -107,11 +107,11 @@ void Commit::createTree() {
 		return static_cast<index::IndexFileStatus>(curr.flag) == index::IndexFileStatus::STAGED;
 		});
 	if (isallCommited) {
-
 		utils::ConsoleHandler handler;
 		handler.setColor(utils::Color::BRIGHT_RED);
 		cout << "Nothing to commit. All files up to date" << endl;
 		cout << "Please add files with `dose add [files]` before commiting" << endl;
+		handler.resetColor();
 		exit(EXIT_SUCCESS);
 	}
 	for (auto& entry : index.mindexEntries) {
@@ -166,6 +166,7 @@ void tempexit() {
 }
 void Commit::updateLogs() {
 	//replace: main with branch name
+	/* TODO MUST : refactor : in logfile object*/
 	std::ofstream logFile{ mrootPath / ".dose/logs/refs/main",std::ios::app };
 	if (!logFile) {
 		std::stringstream errmsg;
@@ -175,7 +176,6 @@ void Commit::updateLogs() {
 	}
 	logFile << mparentHash << " " << mhash << " " << mcoommitTime << " author " << mmessage << endl;//add time, author and message
 }
-
 
 bool Commit::loadFromCommitHash(const std::string& hash) {
 	if (hash.empty()) {
