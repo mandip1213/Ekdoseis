@@ -38,8 +38,8 @@ namespace index {
 	};
 
 	struct indexEntry {
-		unsigned int createdTime;
-		unsigned int modifiedTime;
+		uint64_t createdTime;
+		uint64_t modifiedTime;
 		unsigned int sd_dev;//metadata
 		unsigned int sd_ino;//metadata
 		unsigned int mode;//permissoins -only this is used in windows
@@ -49,7 +49,7 @@ namespace index {
 		std::string   sha1;//what is signed and unsigned char 
 		unsigned int flag;
 		std::string fileName;//variable length null terminated
-
 	};
+
 };
 

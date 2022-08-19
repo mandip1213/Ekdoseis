@@ -34,7 +34,7 @@ index::FileStatus Index::getFileStatus(const fs::path& filePath, bool updateInde
 		bool match = fs::equivalent(mrefToRootPath / entry.fileName, filePath, ec);
 		if (ec) {
 			std::stringstream errmsg;
-			errmsg<< "An error occured. " << ec.message();
+			errmsg << "An error occured. " << ec.message();
 			utils::printError(errmsg.str());
 			exit(EXIT_SUCCESS);
 		}
@@ -171,13 +171,16 @@ bool Index::add(const fs::path & filePath, const std::string & hash) {
 	fs::path relativePath = fs::relative(filePath, mrefToRootPath, ec);
 	if (ec) {
 		std::stringstream errmsg;
-		errmsg<< "Error: cannot stage " << filePath.string() << endl;
+		errmsg << "Error: cannot stage " << filePath.string() << endl;
 		utils::printError(errmsg.str());
-		
-
 		(EXIT_SUCCESS);
 		return false;
 	}
+
+	const auto fileTime = std::filesystem::last_write_time(filePath);
+	const auto systemTime = std::chrono::clock_cast<std::chrono::system_clock>(fileTime);
+	const auto time = std::chrono::system_clock::to_time_t(systemTime);
+
 	std::string str = relativePath.string();
 	index::indexEntry currEntry = {
 		.createdTime = static_cast<unsigned int>(stat.st_ctime),
@@ -218,7 +221,6 @@ bool Index::hasFileChanged(const fs::path & filepath) {
 }
 
 void Index::checkcout(Index & newIndex) {
-	newIndex.writeToFile();//update index
 
 	//update directory
 	for (auto& newEntry : newIndex.mindexEntries) {
@@ -229,8 +231,25 @@ void Index::checkcout(Index & newIndex) {
 		tp.close();
 		std::error_code ec;
 		bool _tb = fs::copy_file(fromP, toP, fs::copy_options::overwrite_existing, ec);
-		cout << ec.message() << ec.value() << endl;
+		if (ec) {
+			cout << "Cannot update file " << newEntry.fileName << endl;
+			cout << ec.message() << ec.value() << endl;
+			continue;
+		}
+		auto copiedTime = fs::last_write_time(toP, ec);
+		if (ec) {
+			cout << "cannot get file update time of " << newEntry.fileName << endl;
+			cout << ec.message() << ec.value() << endl;
+		}
+
+		const auto fileTime = std::filesystem::last_write_time(toP);
+		const auto systemTime = std::chrono::clock_cast<std::chrono::system_clock>(fileTime);
+		const auto time = std::chrono::system_clock::to_time_t(systemTime);
+		newEntry.modifiedTime = time;
+
 	}
+	newIndex.writeToFile();//update index
+
 	//delete files that are only in oldindex
 
 	for (auto& oldEntry : this->mindexEntries) {

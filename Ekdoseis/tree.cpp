@@ -13,6 +13,7 @@ Tree::Tree(const std::string& name, const std::string& hash)
 	: myName{ name }, mhash{ hash }
 {
 }
+
 bool Tree::insertBlob(const std::string& hash, const fs::path& pathname) {
 
 	Tree* currRootTree{ this };
@@ -129,7 +130,7 @@ void Tree::createNewIndex(Index& ii, std::string dirName) {
 			.sd_gid = static_cast<unsigned  int>(stat.st_gid),
 			.sd_size = static_cast<unsigned  int>(stat.st_size),
 			.sha1 = currBlob.getHash(),
-			.flag = static_cast<unsigned int>(index::IndexFileStatus::STAGED),
+			.flag = static_cast<unsigned int>(index::IndexFileStatus::COMMITTED),
 			//.sha1 = hash.c_str(),
 			.fileName = dirName + currBlob.getName()
 

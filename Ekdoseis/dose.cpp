@@ -190,7 +190,6 @@ Dose& Dose::status() {
 				i.disable_recursion_pending();
 				continue;
 			}
-
 		}
 		if (fs::is_directory(p)) {
 			continue;
@@ -388,6 +387,7 @@ Dose& Dose::add() {
 	}
 	return *this;
 }
+
 Dose& Dose::checkout() {
 	/*
 	if the checkout point is branch
@@ -405,7 +405,7 @@ Dose& Dose::checkout() {
 	mindex.fetchFromIndex();
 	cout << checkoutPoint << " c" << endl;
 	if (Branch::isBranch(mrootPath, checkoutPoint)) {
-		cout << "YEs man this is my branch" << endl;
+		//cout << "YEs man this is my branch" << endl;
 		std::ifstream branchfptr{ mrootPath / ".dose/refs/heads" / checkoutPoint };
 		branchfptr >> checkoutCommit;
 		//TODO BRANCH

@@ -13,6 +13,7 @@ using std::cout;
 #define endl '\n'
 std::ofstream& operator<<(std::ofstream& out, utils::Color color) {
 
+	return out;
 }
 class Branch {
 private:
