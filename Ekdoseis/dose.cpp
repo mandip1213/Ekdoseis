@@ -50,6 +50,9 @@ Dose& Dose::parseRootCommand() {
 	else if (strcmp(arg_cmd, "branch") == 0) {
 		mcommand = BRANCH;
 	}
+	else if (strcmp(arg_cmd, "merge") == 0) {
+		mcommand = MERGE;
+	}
 	else {
 		std::stringstream errmsg;
 		errmsg << "Error:" << *this << "doesnot exist" << endl;
@@ -61,6 +64,7 @@ Dose& Dose::parseRootCommand() {
 }
 Dose& Dose::execCommand() {
 	switch (mcommand) {
+	case NOCOMMAND:break;
 	case INIT:init(); break;
 	case ADD:add(); break;
 	case COMMIT: commit(); break;
@@ -69,6 +73,7 @@ Dose& Dose::execCommand() {
 	case CHECKOUT: checkout(); break;
 	case RESTORE:restore(); break;
 	case BRANCH:branch(); break;
+	case MERGE: merge(); break;
 	}
 	return *this;
 }
@@ -252,11 +257,21 @@ Dose& Dose::status() {
 Dose& Dose::log() {
 
 	/*
-	-currently log is only for branch main
 	- todo: implement for detached head state
 	*/
 
-	std::ifstream logFile{ mrootPath / ".dose/logs/refs/main" };
+	std::ifstream headfptr{ mrootPath / ".dose/HEAD" };
+	std::string reference;
+	std::getline(headfptr, reference);
+	if (reference.starts_with("ref: refs/heads/")) {
+		reference.erase(0, std::string("ref: refs/heads/").size());
+	}
+	else {
+		/* HEAD is in detahced state */
+		cout << "HEAD is in detached state " << endl;
+		/*MUST change the way of logging*/
+	}
+	std::ifstream logFile{ mrootPath / ".dose/logs/refs" / reference };
 	if (!logFile) {
 		cout << "NO logs";
 		return *this;
@@ -430,11 +445,18 @@ Dose& Dose::checkout() {
 		Dose::updateHead(mrootPath, checkoutPoint);
 		//for (auto& entries : newIndex.mindexEntries)
 	}
+
 	return *this;
 }
 bool Dose::isValidCommit(const std::string& ch_point) {
+	if (ch_point.size() != 40)
+		return false;
 	const fs::path dirPath = mrootPath / ".dose/objects" / ch_point.substr(0, 2);
 	const fs::path requiredPath = dirPath / ch_point.substr(2, 40 - 2);
+	if (fs::exists(requiredPath)) {
+		return true;
+	}
+	/*
 	using iterator = fs::recursive_directory_iterator;
 	for (iterator i = fs::recursive_directory_iterator(mrootPath / ".dose/objects");
 		i != fs::recursive_directory_iterator();
@@ -449,9 +471,9 @@ bool Dose::isValidCommit(const std::string& ch_point) {
 			cout << "found the checkout point";
 			//sutffs
 			return true;
-			break;
 		}
 	}
+	*/
 	return false;
 }
 
@@ -513,7 +535,7 @@ Dose& Dose::branch() {
 		}
 	}
 	else if (*margv[3] != '-') {
-		if (margc > 4) {
+		if (margc > 5) {
 			//exit
 			exit(EXIT_SUCCESS);
 		}
@@ -544,6 +566,34 @@ Dose& Dose::branch() {
 		utils::printColorful(arr);
 	}
 	return *this;
+}
+
+Dose& Dose::merge() {
+	if (margc != 4) {
+		utils::printError("Invalid args\n");
+		exit(EXIT_SUCCESS);
+	}
+	if (Branch::isBranch(mrootPath, margv[3])) {
+		const  std::string commitObj = Branch::getCommitFromBranch(mrootPath, margv[3]);
+		if (isValidCommit(commitObj)) {
+			Merge merge{ mrootPath,commitObj };
+			merge.merge();
+		}
+	}
+	else if (this->isValidCommit(margv[3])) {
+		Merge merge{ mrootPath,margv[3] };
+		merge.merge();
+	}
+	else {
+		const std::array<utils::StringColorPair, 3> arr{ {
+			{"ERROR: cannot merge ", utils::Color::BRIGHT_RED},
+			{std::string{"'"} + margv[3] + "'. ",utils::Color::BRIGHT_YELLOW},
+			{"Invalid Reference.", utils::Color::BRIGHT_RED}
+			} };
+		utils::printColorful(arr);
+	}
+	return *this;
+
 }
 //TODO:
 //show corresponding commit message if the file is up to date

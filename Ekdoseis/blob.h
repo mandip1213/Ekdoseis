@@ -11,5 +11,6 @@ public:
 	Blob(const std::string& hash, const std::string& name);
 	const std::string& getName()const;
 	std::string getHash()const;
+	void updateHash(const std::string& hash);
 };
 #endif

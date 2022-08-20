@@ -19,6 +19,7 @@ private:
 	std::string mmessage;
 	fs::path mrootPath;
 	fs::path mrefPath;
+	std::string mbranchName;
 	uint64_t mcoommitTime;
 	void createLogFiles();
 	//timestamp
@@ -26,7 +27,7 @@ private:
 public:
 	Commit(const fs::path& rootPath);
 	void createTree();//create a tree object from index entries 
-	void updateHead();
+	void updateHeadRef();
 	void  compareTreeHash();
 	void fetchParentHash();
 	void updateLogs();
@@ -34,6 +35,8 @@ public:
 	void setMessage(std::string message) { mmessage = message; }
 	bool loadFromCommitHash(const std::string& hash = "");
 	const Tree& getTree()const { return mtree; }
+	void setParenthash(const std::string& hash);
+	void setTree(const Tree& tree);
 
 
 };

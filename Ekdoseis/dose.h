@@ -44,6 +44,7 @@ public:
 	Dose& checkout();
 	Dose& restore();
 	Dose& branch();
+	Dose& merge();
 	friend	void parseCommand(int argc, char* argv[], std::vector<struct Token> tokenList);
 };
 #endif

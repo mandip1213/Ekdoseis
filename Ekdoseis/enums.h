@@ -12,6 +12,7 @@ enum CreateFlag {
 	OVERRIDE_IF_EXISTS,
 };
 enum DoseCommand {
+	NOCOMMAND,
 	INIT,
 	ADD,
 	COMMIT,
@@ -20,7 +21,7 @@ enum DoseCommand {
 	CHECKOUT,
 	RESTORE,
 	BRANCH,
-	NOCOMMAND,
+	MERGE,
 
 };
 

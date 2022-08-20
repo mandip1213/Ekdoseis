@@ -19,6 +19,19 @@ Commit::Commit(const fs::path& rootPath)
 	std::string _tempstr, refpath;
 	headptr >> _tempstr >> refpath;
 	mrefPath = mrootPath / ".dose" / refpath;
+	if (!fs::exists(mrefPath)) {
+		if (_tempstr.size() == 40) {
+			utils::printError("Cannot create a commit in detach mode\n");
+			cout << "Please switch to specific branch to create a commit\n";
+			cout << "You can create a branch at current commmit with: ";
+			cout << "`dose branch <branch-name>\n";
+		}
+		else {
+			utils::printError("Illegal reference in HEAD");
+		}
+		exit(EXIT_FAILURE);
+
+	}
 }
 
 void Commit::compareTreeHash() {
@@ -32,7 +45,7 @@ void Commit::compareTreeHash() {
 	if (currHash.compare(prevHash) == 0) {
 
 		utils::ConsoleHandler handler;
-		handler.setColor(utils::Color::BRIGHT_RED);
+		handler.setColor(utils::Color::BRIGHT_YELLOW);
 		//bug: this runs when already tracked files are committed
 		cout << "Nothinig to commit" << endl;
 		cout << "Please add files before committing" << endl;
@@ -40,9 +53,9 @@ void Commit::compareTreeHash() {
 	}
 	return;
 }
+
 void Commit::createCommit() {
 	compareTreeHash();//if same program will exit
-
 	std::stringstream streambuf;
 	mcoommitTime = utils::getTime();
 	//todo: add author committer and time
@@ -61,7 +74,7 @@ void Commit::createCommit() {
 	ReturnFlag _rf = utils::createObjectDir(commitObj);
 	if (!(_rf == CREATE_SUCCESS || _rf == ALREADY_EXISTS)) {
 		std::stringstream errmsg;
-		errmsg<< "Error: " << "cannot perform the required action" << endl;
+		errmsg << "Error: " << "cannot perform the required action" << endl;
 		utils::printError(errmsg.str());
 		exit(EXIT_SUCCESS);
 	}
@@ -74,8 +87,9 @@ void Commit::createCommit() {
 		createLogFiles();
 	}
 	updateLogs();
-	updateHead();
+	updateHeadRef();
 }
+
 void Commit::createLogFiles() {
 	ReturnFlag _rf = utils::createObjectDir(mrootPath / ".dose/logs");
 	if (_rf == CREATE_FAILURE) {
@@ -87,17 +101,20 @@ void Commit::createLogFiles() {
 	_rf = utils::createObjectDir(mrootPath / ".dose/logs/refs");
 	if (_rf == CREATE_FAILURE) {
 		std::stringstream errmsg;
-		errmsg<< "Error: cannot update logs";
+		errmsg << "Error: cannot update logs";
 		utils::printError(errmsg.str());
 		exit(EXIT_SUCCESS);
-		std::ofstream newFile{ mrootPath / ".dose/logs/refs/main" };
+		std::ofstream newFile{ mrootPath / ".dose/logs/refs" / mrefPath.filename() };
 	}
 }
-void Commit::updateHead() {
+
+void Commit::updateHeadRef() {
 	std::ofstream headptr{ mrefPath };
+	cout << "updatin head " << mrefPath << endl;
 	headptr << mhash;
 	//cout << "log:  " << mhash << " ref updated" << endl;
 }
+
 void Commit::createTree() {
 	Index index{ mrootPath };
 	index.fetchFromIndex();
@@ -132,11 +149,11 @@ void Commit::createTree() {
 
 
 void Commit::fetchParentHash() {
-	std::ifstream logFile{ mrootPath / ".dose/logs/refs/main" };
+	std::ifstream logFile{ mrootPath / ".dose/logs/refs" / mrefPath.filename() };
 	if (!logFile) {
-		if (fs::exists(mrootPath / ".dose/logs/refs/main")) {
+		if (fs::exists(mrootPath / ".dose/logs/refs" / mrefPath.filename())) {
 			std::stringstream errmsg;
-			errmsg<< "Error: cannot commit" << endl;
+			errmsg << "Error: cannot commit" << endl;
 			utils::printError(errmsg.str());
 			exit(EXIT_SUCCESS);
 		}
@@ -164,10 +181,12 @@ void tempexit() {
 	utils::printError(errmsg.str());
 	exit(EXIT_SUCCESS);
 }
+
 void Commit::updateLogs() {
 	//replace: main with branch name
 	/* TODO MUST : refactor : in logfile object*/
-	std::ofstream logFile{ mrootPath / ".dose/logs/refs/main",std::ios::app };
+	std::ofstream logFile{ mrootPath / ".dose/logs/refs" / mrefPath.filename(),std::ios::app };
+	cout << "updating log" << mrefPath.filename() << endl;
 	if (!logFile) {
 		std::stringstream errmsg;
 		errmsg << "Error: couldnot open log files" << endl;
@@ -199,3 +218,11 @@ bool Commit::loadFromCommitHash(const std::string& hash) {
 	return true;
 }
 
+
+void Commit::setParenthash(const std::string& hash) {
+	mparentHash = hash;
+}
+
+void Commit::setTree(const Tree& tree) {
+	mtree = std::move(tree);
+}

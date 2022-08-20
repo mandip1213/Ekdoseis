@@ -60,8 +60,7 @@ void Tree::createTreeObjects() {
 
 	//TODO create a stream and finally write it into file 
 	//not write into file and again read it to create hash 
-	//hostel net sucks and so do no access to stackoverflow
-	//std::basic_stringstream stream 
+	//hostel net sucks and so  no access to stackoverflow
 	std::stringstream streambuf;
 	for (auto& currBlob : mblobs) {
 		//TODO:permissions
@@ -92,6 +91,10 @@ void Tree::createTreeObjects() {
 void Tree::createTreeFromObject() {
 	const fs::path treeObj{ fs::current_path() / ".dose/objects" / mhash.substr(0,2) / mhash.substr(2,40 - 2) };
 	std::ifstream treeiptr{ treeObj };
+	if (!treeiptr) {
+		utils::printError("Invalid commit object '" + mhash + "'");
+		exit(EXIT_SUCCESS);
+	}
 	std::string line;
 	std::string permissions;//later
 	std::string type;
@@ -157,5 +160,164 @@ std::string Tree::getHashOfFile(const std::string& fileName)const {
 		currTree.getHashOfFile(fileName);
 	}
 	return "";//if filenot found
+
+}
+
+
+Tree operator-(const Tree& tree1, const Tree& tree2) {
+	Tree difftree{ "" };
+
+	auto matchflag = false;
+	for (auto blob1 : tree1.mblobs) {
+		for (auto blob2 : tree2.mblobs) {
+			if (blob1.getName() == blob2.getName()) {
+				matchflag = true;
+				break;
+			}
+		}
+		if (!matchflag) {
+			difftree.mblobs.push_back(blob1);
+		}
+		matchflag = false;
+	}
+	for (auto t1 : tree1.mtrees) {
+		for (auto t2 : tree2.mtrees) {
+			if (t1.myName == t2.myName) {
+				difftree.mtrees.push_back(t1 - t2);
+				matchflag = true;
+				break;
+			}
+		}
+		if (!matchflag) {
+			difftree.mtrees.push_back(t1);
+			matchflag = false;
+		}
+	}
+	return difftree;
+	/*merge this fucntion into merge Tree : leave for now*/
+}
+
+/*
+For each existing file in both branches:
+	- if file is not changed in both branch, nothing
+	- if any file is changed only in current branch, don't touch it.
+	- if any file is changed only in branch to merge, update the file in current branch.
+	- if file is changed in both branch, asks the user which file he / she wants to keep.
+
+for new file in current branch :
+	don't touch it
+
+for new file in branchtomerge :
+	bring the file in current branch
+
+for new file in both branch with same name:
+	ask the user which file he / she wants to keep
+
+for deleted file in currbranch????
+
+same applies for tree
+*/
+
+void Tree::mergeTree(const Tree& treeToMerge, const Tree& commonAncestor, const fs::path& rootPath) {
+
+	using enum utils::Color;
+	utils::ConsoleHandler handler;
+
+	auto userChoice = [&](const std::string& currblob, bool newfile)->int {
+		handler.setColor(BRIGHT_GREEN);
+		cout << "'" << currblob << "'";
+		handler.setColor(BRIGHT_YELLOW);
+		cout << (!newfile ? "is changed in both branches. " : "is created new in both branch") << endl;
+		handler.resetColor();
+		cout << "Please select the branch you want to keep change of: " << endl;
+		handler.setColor(BRIGHT_GREEN);
+		cout << "1. " << this->myName << endl;
+		cout << "2. " << treeToMerge.myName << endl;
+		handler.setColor(BRIGHT_YELLOW);
+		std::cout << "Choose branch: (1/2)";
+
+		int ch;
+		std::cin >> ch;
+		while (ch != 1 && ch != 2) {
+			cout << "Please choose corrent branch. (1/2): ";
+			std::cin >> ch;
+		}
+		return ch;
+	};
+
+	for (auto& currblob : this->mblobs) {
+		for (const auto& blobtoMerge : treeToMerge.mblobs) {
+			if (currblob.getName() == blobtoMerge.getName()) {
+				/* for file in both branches */
+				bool foundinCommon = false;
+				for (const auto& commonblob : commonAncestor.mblobs) {
+					if (currblob.getName() == commonblob.getName()) {
+						foundinCommon = true;
+						const auto currhash = currblob.getHash();
+						const auto hashtoMerge = blobtoMerge.getHash();
+						const auto commonhash = commonblob.getHash();
+						if (hashtoMerge == commonhash) {
+							/*File is not changed in branchtomerge i.e file is only changed in currbranch or file is not changed at all*/
+							/*do nothing*/
+						}
+						else if (currhash == commonhash) {
+							/*File is changed in brnachTomerge only*/
+							currblob.updateHash(hashtoMerge);
+						}
+						else {
+							/* file is changed in both branch*/
+							if (userChoice(currblob.getName(), false) == 2)
+								currblob.updateHash(hashtoMerge);
+						}
+					}
+				}
+				/* a new file with same name on both tree*/
+				if (!foundinCommon && userChoice(currblob.getName(), false) == 2)
+					currblob.updateHash(blobtoMerge.getHash());
+			}
+			else {
+				/* new file in currbranch : don't touch*/
+			}
+		}
+	}
+
+	for (auto& currtree : this->mtrees) {
+		const auto currName = currtree.myName;
+		for (const auto& childTreetoMerge : treeToMerge.mtrees) {
+			if (currName == childTreetoMerge.myName) {
+				if (currtree.mhash == childTreetoMerge.mhash) {
+					/*  trees are same in both branch*/
+					break;
+				}
+				/*tree is found in both*/
+				auto commonTree = std::find_if(commonAncestor.mtrees.begin(), commonAncestor.mtrees.end(), [currName](const Tree& tree) {
+					return tree.myName == currName;
+					});
+
+				if (commonTree != commonAncestor.mtrees.end()) {
+					/*tree is in common ancestor too*/
+					currtree.mergeTree(childTreetoMerge, *commonTree, rootPath);
+				}
+				else {
+					/*tree is new in both branches*/
+					currtree.mergeTree(childTreetoMerge, Tree{ "" }, rootPath);
+				}
+			}
+			else {
+				/* new tree in current branch : don't touch*/
+			}
+		}
+	}
+
+}
+
+
+void Tree::mergeDiffTree(const Tree& newTree) {
+	for (auto blob : newTree.mblobs) {
+		this->mblobs.push_back(std::move(blob));
+	}
+	for (auto tree : newTree.mtrees) {
+		this->mtrees.push_back(std::move(tree));
+	}
 
 }
