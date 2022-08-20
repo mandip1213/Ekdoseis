@@ -37,7 +37,5 @@ public:
 	const Tree& getTree()const { return mtree; }
 	void setParenthash(const std::string& hash);
 	void setTree(const Tree& tree);
-
-
 };
 #endif

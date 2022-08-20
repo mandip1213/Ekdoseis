@@ -8,6 +8,7 @@
 #include"commit.h"
 #include"utils.h"
 #include"branch.h"
+#include"merge.h"
 #define endl '\n'
 //0- root command name//dose 
 //1- location from which comman is called
@@ -119,6 +120,7 @@ Dose& Dose::init() {
 		cout << "Error: couldnot initialize Ekdoseis repo on " << mrootPath << endl;
 		exit(EXIT_SUCCESS);
 	}
+
 	handler.resetColor();
 	bool _s = SetFileAttributesA((mrootPath / ".dose").string().c_str(), FILE_ATTRIBUTE_HIDDEN);//for hiding the folder
 	ReturnFlag _r1 = createDirectory(".dose/objects");
@@ -139,6 +141,7 @@ Dose& Dose::init() {
 	handler.resetColor();
 	return *this;
 }
+
 Dose& Dose::commit() {
 
 	utils::ConsoleHandler handler;
@@ -162,6 +165,7 @@ Dose& Dose::commit() {
 	std::error_code ec;
 	return *this;
 }
+
 Dose& Dose::status() {
 	using iterator = fs::recursive_directory_iterator;
 	//for (auto& curr : fs::recursive_directory_iterator(p)) {
@@ -390,6 +394,7 @@ Dose& Dose::add() {
 		std::ofstream _headptr{ mrootPath / ".dose/index" };
 		_headptr.close();
 	}
+
 	doseIgnore = DoseIgnore(mrootPath);//we only need it now
 	mindex = Index(mrootPath);
 	mindex.fetchFromIndex();
@@ -404,6 +409,7 @@ Dose& Dose::add() {
 }
 
 Dose& Dose::checkout() {
+
 	/*
 	if the checkout point is branch
 	if the checkout pointis branchless commit f

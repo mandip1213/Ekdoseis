@@ -183,7 +183,9 @@ Tree operator-(const Tree& tree1, const Tree& tree2) {
 	for (auto t1 : tree1.mtrees) {
 		for (auto t2 : tree2.mtrees) {
 			if (t1.myName == t2.myName) {
-				difftree.mtrees.push_back(t1 - t2);
+				Tree tempdiff = t1 - t2;
+				tempdiff.myName = t1.myName;
+				difftree.mtrees.push_back(tempdiff);
 				matchflag = true;
 				break;
 			}
@@ -231,8 +233,13 @@ void Tree::mergeTree(const Tree& treeToMerge, const Tree& commonAncestor, const 
 		handler.resetColor();
 		cout << "Please select the branch you want to keep change of: " << endl;
 		handler.setColor(BRIGHT_GREEN);
-		cout << "1. " << this->myName << endl;
-		cout << "2. " << treeToMerge.myName << endl;
+
+		//		cout << "1. " << this->myName << endl;
+		//		cout << "2. " << treeToMerge.myName << endl;
+
+		cout << "1. " << "current branch" << endl;
+		cout << "2. " << "treeToMerge.myName " << endl;
+
 		handler.setColor(BRIGHT_YELLOW);
 		std::cout << "Choose branch: (1/2)";
 
@@ -316,8 +323,17 @@ void Tree::mergeDiffTree(const Tree& newTree) {
 	for (auto blob : newTree.mblobs) {
 		this->mblobs.push_back(std::move(blob));
 	}
-	for (auto tree : newTree.mtrees) {
-		this->mtrees.push_back(std::move(tree));
+	for (auto newtree : newTree.mtrees) {
+		bool found = false;
+		for (auto& existingtree : this->mtrees) {
+			if (newtree.myName == existingtree.myName) {
+				existingtree.mergeDiffTree(newtree);
+				found = true;
+				break;
+			}
+		}
+		if (!found) {
+			this->mtrees.push_back(newtree);
+		}
 	}
-
 }

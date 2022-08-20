@@ -251,7 +251,6 @@ void Index::checkcout(Index & newIndex) {
 	newIndex.writeToFile();//update index
 
 	//delete files that are only in oldindex
-
 	for (auto& oldEntry : this->mindexEntries) {
 		bool foundMatch = false;
 		fs::path filePath{ oldEntry.fileName };

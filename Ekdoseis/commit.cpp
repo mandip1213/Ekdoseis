@@ -63,7 +63,7 @@ void Commit::createCommit() {
 	streambuf << "tree " << mtree.getHash() << '\n';
 	streambuf << "parent " << mparentHash << '\n';
 	//streambuf << "author " << "ShakesPeare" << "time "<<"timezone"<<'\n';
-	streambuf << "committer " << "ShakesPeare" << mcoommitTime << '\n';
+	streambuf << "committer " << "ShakesPeare " << mcoommitTime << '\n';
 	streambuf << mmessage << '\n';
 
 	SHA1 hash;

@@ -146,6 +146,7 @@
     <ClCompile Include="dose.cpp" />
     <ClCompile Include="index.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="merge.cpp" />
     <ClCompile Include="parser.cpp" />
     <ClCompile Include="sha1.cpp" />
     <ClCompile Include="blob.cpp" />
@@ -161,6 +162,7 @@
     <ClInclude Include="doseignore.h" />
     <ClInclude Include="enums.h" />
     <ClInclude Include="hash.h" />
+    <ClInclude Include="merge.h" />
     <ClInclude Include="parser.h" />
     <ClInclude Include="sha1.h" />
     <ClInclude Include="tree.h" />
