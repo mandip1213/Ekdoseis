@@ -77,9 +77,7 @@ void Tree::createTreeObjects() {
 	fs::path objPath{ fs::current_path() / ".dose/objects" / mhash.substr(0,2) };
 	ReturnFlag _rf = utils::createObjectDir(objPath);
 	if (!(_rf == CREATE_SUCCESS || _rf == ALREADY_EXISTS)) {
-		std::stringstream errmsg;
-		errmsg << "Error: " << "cannot perform the required action" << endl;
-		utils::printError(errmsg.str());
+		utils::printError("ERROR: cannot perform the required action.\n");
 		exit(EXIT_SUCCESS);
 	}
 	std::ofstream ofptr{ objPath / mhash.substr(2,40 - 2) };

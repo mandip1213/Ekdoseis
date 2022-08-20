@@ -55,14 +55,18 @@ Dose& Dose::parseRootCommand() {
 		mcommand = MERGE;
 	}
 	else {
-		std::stringstream errmsg;
-		errmsg << "Error:" << *this << "doesnot exist" << endl;
-		utils::printError(errmsg.str());
+		const std::array<utils::StringColorPair, 3> arr{ {
+				{"Error: command", utils::Color::BRIGHT_RED},
+				{" '" + std::string{arg_cmd} + "' ",utils::Color::BRIGHT_GREEN},
+				{"doesnot exist", utils::Color::BRIGHT_RED}
+				} };
+		utils::printColorful(arr);
 		exit(EXIT_SUCCESS);
 	}
 	fs::current_path(arg_path);//change current path to arg_path
 	return *this;
 }
+
 Dose& Dose::execCommand() {
 	switch (mcommand) {
 	case NOCOMMAND:break;
@@ -78,6 +82,7 @@ Dose& Dose::execCommand() {
 	}
 	return *this;
 }
+
 ReturnFlag Dose::createDirectory(const std::string_view& dirName, CreateFlag flags) {
 	fs::path newDir = mrootPath / dirName;//bug?
 	if (fs::exists(newDir)) {
@@ -99,6 +104,7 @@ ReturnFlag Dose::createDirectory(const std::string_view& dirName, CreateFlag fla
 	}
 	return CREATE_SUCCESS;
 }
+
 void Dose::errorExit() {
 	cout << *this << "An error occured" << endl;
 	exit(EXIT_SUCCESS);
@@ -108,20 +114,31 @@ Dose& Dose::init() {
 	const std::string defaultBranchName = "main";
 	//LINK:https://git-scm.com/docs/git-init
 
-	utils::ConsoleHandler handler;
-	handler.setColor(utils::Color::BRIGHT_GREEN);
-	cout << "initializing empty ekdoseis repo in " << mrootPath << endl;
+	const std::array<utils::StringColorPair, 2> arr{ {
+			{"Initializing empty ekdoseis repo in", utils::Color::BRIGHT_YELLOW},
+			{" '" + mrootPath.string() + "' \n",utils::Color::BRIGHT_GREEN},
+			} };
+	utils::printColorful(arr);
+
 	ReturnFlag _rflag = createDirectory(".dose");
 	if (_rflag == ALREADY_EXISTS) {
-		cout << "Ekdoseis is already initialized in " << mrootPath << endl;
+		const std::array<utils::StringColorPair, 2> arr{ {
+				{"Ekdoesis is already initialized in", utils::Color::BRIGHT_YELLOW},
+				{" '" + mrootPath.string() + "' \n",utils::Color::BRIGHT_GREEN},
+				} };
+		utils::printColorful(arr);
 		return *this;
 	}
+
 	if (_rflag == CREATE_FAILURE) {
-		cout << "Error: couldnot initialize Ekdoseis repo on " << mrootPath << endl;
+		const std::array<utils::StringColorPair, 2> arr{ {
+				{"Error: couldnot initialize Ekdoseis repo on ", utils::Color::BRIGHT_RED},
+				{" '" + mrootPath.string() + "' \n",utils::Color::BRIGHT_GREEN},
+				} };
+		utils::printColorful(arr);
 		exit(EXIT_SUCCESS);
 	}
 
-	handler.resetColor();
 	bool _s = SetFileAttributesA((mrootPath / ".dose").string().c_str(), FILE_ATTRIBUTE_HIDDEN);//for hiding the folder
 	ReturnFlag _r1 = createDirectory(".dose/objects");
 	if (_r1 != CREATE_SUCCESS)errorExit();
@@ -136,9 +153,12 @@ Dose& Dose::init() {
 	headptr << "ref: refs/heads/" << defaultBranchName << endl;
 	_headf.close();
 	headptr.close();
-	handler.setColor(utils::Color::BRIGHT_GREEN);
-	cout << "Successfully Initialized empty repo in" << *this << endl;
-	handler.resetColor();
+
+	const std::array<utils::StringColorPair, 2> arrr{ {
+			{"Successfully Initialized empty repo in", utils::Color::BRIGHT_YELLOW},
+			{" '" + mrootPath.string() + "' \n",utils::Color::BRIGHT_GREEN},
+			} };
+	utils::printColorful(arrr);
 	return *this;
 }
 
@@ -159,10 +179,15 @@ Dose& Dose::commit() {
 	commit.setMessage(margv[4]);
 	commit.createTree();
 	commit.fetchParentHash();
-	commit.createCommit();
+	commit.getAuthor();
 
+	commit.createCommit();
+	const std::array<utils::StringColorPair, 2> arr{ {
+			{"Changes commited successfully with commit hash ", utils::Color::BRIGHT_YELLOW},
+			{" '" + commit.getHash() + "' ",utils::Color::BRIGHT_GREEN},
+			} };
+	utils::printColorful(arr);
 	//	commit.compareTreeHash();//todo: instead of this  check the flag of every file of index
-	std::error_code ec;
 	return *this;
 }
 
@@ -258,6 +283,7 @@ Dose& Dose::status() {
 	handler.resetColor();
 	return *this;
 }
+
 Dose& Dose::log() {
 
 	/*
@@ -317,22 +343,30 @@ Dose& Dose::log() {
 	handler.resetColor();
 	return *this;
 }
+
 void Dose::addFile(const fs::path& currPath) {
 
-	utils::ConsoleHandler handler;
-	handler.setColor(utils::Color::BRIGHT_GREEN);
 	if (!exists(currPath)) {
-		cout << "Error: " << currPath.string() << " doesnot exists." << endl;
+		const std::array<utils::StringColorPair, 3> arr{ {
+		{"ERROR:", utils::Color::BRIGHT_RED},
+		{" '" + currPath.string() + "' ",utils::Color::BRIGHT_GREEN},
+		{"doesnot exists\n", utils::Color::BRIGHT_RED}
+		} };
+		utils::printColorful(arr);
 		return;
 		//exit(EXIT_SUCCESS);
 	}
 	if (doseIgnore.has(currPath)) {
-		cout << " debug Error: " << currPath << " already exists in the doseignore." << endl;
+		const std::array<utils::StringColorPair, 3> arr{ {
+		{"ERROR:", utils::Color::BRIGHT_RED},
+		{" '" + currPath.string() + "' ",utils::Color::BRIGHT_GREEN},
+		{"exists in the doseignore.", utils::Color::BRIGHT_RED}
+		} };
+		utils::printColorful(arr);
 		return;
 		//exit(EXIT_SUCCESS);
 	}
 
-	handler.resetColor();
 	if (fs::is_directory(currPath)) {
 		using iterator = fs::recursive_directory_iterator;
 		for (iterator i = fs::recursive_directory_iterator(currPath);
@@ -368,8 +402,9 @@ void Dose::addFile(const fs::path& currPath) {
 		const fs::path hashDirPath = objectPath / hash.substr(0, 2);
 		ReturnFlag _rf1 = createDirectory(hashDirPath.string());
 		if (!(_rf1 == CREATE_SUCCESS || _rf1 == ALREADY_EXISTS)) {
-			cout << "Error: " << "cannot perform the required action" << endl;
-			exit(EXIT_SUCCESS);
+			utils::printError("Error: cannot perform the required action\n");
+			//exit(EXIT_SUCCESS);
+			return;
 		}
 
 		const fs::path _hashFilePath{ hashDirPath / hash.substr(2,hashLength - 2) };
@@ -377,13 +412,25 @@ void Dose::addFile(const fs::path& currPath) {
 
 		fs::copy_file(currPath, _hashFilePath, fs::copy_options::skip_existing, ec); //no encryption now maybe later
 		if (ec) {
-			cout << "Error: " << ec.message() << endl;
-			cout << "Error: " << "cannot perform the required action" << endl;
-			exit(EXIT_SUCCESS);
+			const std::array<utils::StringColorPair, 3> arr{ {
+			{"Error: ", utils::Color::BRIGHT_RED},
+			{ec.message(),utils::Color::BRIGHT_GREEN},
+			{"\nError: couldnot perform the required action\n", utils::Color::BRIGHT_YELLOW}
+
+			} };
+			utils::printColorful(arr);
+			return;
+			//exit(EXIT_SUCCESS);
 		}
 		bool badd = mindex.add(currPath, hash);
 		if (badd) {
-			cout << "File: " << currPath << " staged successfully" << endl;
+			const std::array<utils::StringColorPair, 3> arr{ {
+			{"File:", utils::Color::BRIGHT_YELLOW},
+			{" '" + currPath.string() + "' ",utils::Color::BRIGHT_GREEN},
+			{"staged successfully.\n", utils::Color::BRIGHT_YELLOW}
+
+			} };
+			utils::printColorful(arr);
 		}
 	}
 }
@@ -403,7 +450,6 @@ Dose& Dose::add() {
 		const fs::path _path = mrootPath / margv[i];
 		//if(isFile)//todo
 		this->addFile(_path);
-		cout << _path << endl;
 	}
 	return *this;
 }
@@ -422,10 +468,10 @@ Dose& Dose::checkout() {
 	const 	std::string checkoutPoint{ margv[3] };
 	std::string checkoutCommit;
 
+	const bool isBranch = Branch::isBranch(mrootPath, checkoutPoint);
 	mindex = Index{ mrootPath };
 	mindex.fetchFromIndex();
-	cout << checkoutPoint << " c" << endl;
-	if (Branch::isBranch(mrootPath, checkoutPoint)) {
+	if (isBranch) {
 		//cout << "YEs man this is my branch" << endl;
 		std::ifstream branchfptr{ mrootPath / ".dose/refs/heads" / checkoutPoint };
 		branchfptr >> checkoutCommit;
@@ -449,11 +495,34 @@ Dose& Dose::checkout() {
 		newTree.createNewIndex(newIndex);//passed as reference
 		this->mindex.checkcout(newIndex);
 		Dose::updateHead(mrootPath, checkoutPoint);
-		//for (auto& entries : newIndex.mindexEntries)
+
+		if (isBranch) {
+			const std::array<utils::StringColorPair, 2> arr{ {
+					{"Sucessfully switched to branch" , utils::Color::BRIGHT_YELLOW},
+					{" '" + checkoutPoint + "' \n",utils::Color::BRIGHT_GREEN},
+					} };
+			utils::printColorful(arr);
+		}
+		else {
+			const std::array<utils::StringColorPair, 3> arr{ {
+					{"Sucessfully switched to commit" , utils::Color::BRIGHT_YELLOW},
+					{" '" + checkoutPoint + "' \n",utils::Color::BRIGHT_GREEN},
+					{"You are now in detached head state." , utils::Color::BRIGHT_YELLOW},
+					} };
+			utils::printColorful(arr);
+		}
+	}
+	else {
+		const std::array<utils::StringColorPair, 2> arr{ {
+				{"You are trying to checkout to illegal reference:" , utils::Color::BRIGHT_RED},
+				{" '" + checkoutPoint + "' \n",utils::Color::BRIGHT_GREEN},
+				} };
+		utils::printColorful(arr);
 	}
 
 	return *this;
 }
+
 bool Dose::isValidCommit(const std::string& ch_point) {
 	if (ch_point.size() != 40)
 		return false;
@@ -550,9 +619,11 @@ Dose& Dose::branch() {
 			return std::isalpha(c);
 			});
 		if (!isValidBranchName) {
-			std::stringstream errmsg;
-			errmsg << "'" << branchName << "'" << " is not a valid branch Name" << endl;
-			utils::printError(errmsg.str());
+			const std::array<utils::StringColorPair, 2> arr{ {
+					{" '" + branchName + "' ",utils::Color::BRIGHT_GREEN},
+					{"is not a valid branch name\n", utils::Color::BRIGHT_YELLOW}
+					} };
+			utils::printColorful(arr);
 			exit(EXIT_SUCCESS);
 		}
 		Branch branch{ mrootPath, branchName };
@@ -601,15 +672,16 @@ Dose& Dose::merge() {
 	return *this;
 
 }
+
+
+
 //TODO:
 //show corresponding commit message if the file is up to date
 //set file attribute while copying to hashed objects and vice versa
 //cannot add multiple files at once//work on deleting and creating dir while checking out
 //add validation for commit message
-
 //work with commited and staged flag in index file and show status accordingly
 //validate rootPath
-
 //see and read:
 //locking file 
 //handle adding existing directory as file

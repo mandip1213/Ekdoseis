@@ -63,7 +63,7 @@ void Commit::createCommit() {
 	streambuf << "tree " << mtree.getHash() << '\n';
 	streambuf << "parent " << mparentHash << '\n';
 	//streambuf << "author " << "ShakesPeare" << "time "<<"timezone"<<'\n';
-	streambuf << "committer " << "ShakesPeare " << mcoommitTime << '\n';
+	streambuf << "committer " << (mauthor.empty() ? "Ram" : mauthor) << " " << mcoommitTime << '\n';
 	streambuf << mmessage << '\n';
 
 	SHA1 hash;
@@ -73,9 +73,7 @@ void Commit::createCommit() {
 	fs::path commitObj{ fs::current_path() / ".dose/objects" / mhash.substr(0,2) };
 	ReturnFlag _rf = utils::createObjectDir(commitObj);
 	if (!(_rf == CREATE_SUCCESS || _rf == ALREADY_EXISTS)) {
-		std::stringstream errmsg;
-		errmsg << "Error: " << "cannot perform the required action" << endl;
-		utils::printError(errmsg.str());
+		utils::printError("Error: couldnot perform the required action\n");
 		exit(EXIT_SUCCESS);
 	}
 
@@ -93,16 +91,12 @@ void Commit::createCommit() {
 void Commit::createLogFiles() {
 	ReturnFlag _rf = utils::createObjectDir(mrootPath / ".dose/logs");
 	if (_rf == CREATE_FAILURE) {
-		std::stringstream errmsg;
-		errmsg << "Error: cannot update logs";
-		utils::printError(errmsg.str());
+		utils::printError("Error: couldnot update logs\n");
 		exit(EXIT_SUCCESS);
 	}
 	_rf = utils::createObjectDir(mrootPath / ".dose/logs/refs");
 	if (_rf == CREATE_FAILURE) {
-		std::stringstream errmsg;
-		errmsg << "Error: cannot update logs";
-		utils::printError(errmsg.str());
+		utils::printError("Error: cannot update logs");
 		exit(EXIT_SUCCESS);
 		std::ofstream newFile{ mrootPath / ".dose/logs/refs" / mrefPath.filename() };
 	}
@@ -110,7 +104,7 @@ void Commit::createLogFiles() {
 
 void Commit::updateHeadRef() {
 	std::ofstream headptr{ mrefPath };
-	cout << "updatin head " << mrefPath << endl;
+	//cout << "updatin head " << mrefPath << endl;
 	headptr << mhash;
 	//cout << "log:  " << mhash << " ref updated" << endl;
 }
@@ -134,9 +128,7 @@ void Commit::createTree() {
 	for (auto& entry : index.mindexEntries) {
 		fs::path relativePath = entry.fileName;
 		if (ec) {
-			std::stringstream errmsg;
-			errmsg << "Error: cannot commit " << endl;
-			utils::printError(errmsg.str());
+			utils::printError("Error: cannot commit \n");
 			exit(EXIT_SUCCESS);
 		}
 		mtree.insertBlob(entry.sha1, relativePath);//insert the blob into appropriate location in the tree
@@ -152,9 +144,7 @@ void Commit::fetchParentHash() {
 	std::ifstream logFile{ mrootPath / ".dose/logs/refs" / mrefPath.filename() };
 	if (!logFile) {
 		if (fs::exists(mrootPath / ".dose/logs/refs" / mrefPath.filename())) {
-			std::stringstream errmsg;
-			errmsg << "Error: cannot commit" << endl;
-			utils::printError(errmsg.str());
+			utils::printError("Error: cannot commit\n");
 			exit(EXIT_SUCCESS);
 		}
 		minitialCommit = true;
@@ -176,9 +166,7 @@ void Commit::fetchParentHash() {
 }
 
 void tempexit() {
-	std::stringstream errmsg;
-	errmsg << "Error: cannot update llogs" << endl;
-	utils::printError(errmsg.str());
+	utils::printError("Error: cannot update logs\n");
 	exit(EXIT_SUCCESS);
 }
 
@@ -186,14 +174,12 @@ void Commit::updateLogs() {
 	//replace: main with branch name
 	/* TODO MUST : refactor : in logfile object*/
 	std::ofstream logFile{ mrootPath / ".dose/logs/refs" / mrefPath.filename(),std::ios::app };
-	cout << "updating log" << mrefPath.filename() << endl;
+	//cout << "updating log" << mrefPath.filename() << endl;
 	if (!logFile) {
-		std::stringstream errmsg;
-		errmsg << "Error: couldnot open log files" << endl;
-		utils::printError(errmsg.str());
+		utils::printError("Error: couldnot open log files\n");
 		tempexit();
 	}
-	logFile << mparentHash << " " << mhash << " " << mcoommitTime << " author " << mmessage << endl;//add time, author and message
+	logFile << mparentHash << " " << mhash << " " << mcoommitTime << (mauthor.empty() ? "Ram " : mauthor) << " " << mmessage << endl;//add time, author and message
 }
 
 bool Commit::loadFromCommitHash(const std::string& hash) {
@@ -225,4 +211,16 @@ void Commit::setParenthash(const std::string& hash) {
 
 void Commit::setTree(const Tree& tree) {
 	mtree = std::move(tree);
+}
+
+
+std::string Commit::getHash()const {
+	return mhash;
+}
+
+void Commit::getAuthor() {
+	std::string author;
+	cout << " Please Enter your name: ";
+	std::cin >> author;
+	mauthor = author;
 }

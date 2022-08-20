@@ -85,10 +85,10 @@ void Branch::createBranch(const std::string& object) {
 		<< currTime << " author " << "branch: created from " << object << endl;
 
 	const std::array<utils::StringColorPair, 4> text{ {
-		{"Successfullyl created branch ", utils::Color::BRIGHT_GREEN},
-		{"'" + mbranchName + "'", utils::Color::BRIGHT_YELLOW},
-		{" from ",utils::Color::BRIGHT_GREEN},
-		{"'" + object + "'\n", utils::Color::BRIGHT_YELLOW}
+		{"Successfullyl created branch ", utils::Color::BRIGHT_YELLOW},
+		{"'" + mbranchName + "'", utils::Color::BRIGHT_GREEN},
+		{" from ",utils::Color::BRIGHT_YELLOW},
+		{"'" + object + "'\n", utils::Color::BRIGHT_GREEN}
 	} };
 	utils::printColorful(text);
 }
@@ -155,17 +155,31 @@ void Branch::deleteBranch() {
 	const fs::path branchPath{ mrootPath / ".dose/refs/heads" / mbranchName };
 
 	if (!fs::exists(branchPath)) {
-		cout << "Error: branch '" << mbranchName << "' doesnot exist." << endl;
-
+		const std::array<utils::StringColorPair, 3> text{ {
+			{"ERROR: branch", utils::Color::BRIGHT_RED},
+			{" '" + mbranchName + "' ", utils::Color::BRIGHT_GREEN},
+			{"doesnot exist.\n",utils::Color::BRIGHT_RED},
+		} };
+		utils::printColorful(text);
 	}
 	else if (reference.ends_with(mbranchName)) {
-		cout << "ERROR: unable to delete.\n'" << mbranchName << "' is current branch.\n";
+		const std::array<utils::StringColorPair, 3> text{ {
+			{"ERROR: unable to delete\n", utils::Color::BRIGHT_RED},
+			{"'" + mbranchName + "' ", utils::Color::BRIGHT_GREEN},
+			{"is current branch.\n",utils::Color::BRIGHT_YELLOW},
+		} };
+		utils::printColorful(text);
 	}
 	else {
 		std::error_code ec;
 		if (fs::remove(branchPath, ec)) {
 			fs::remove(mrootPath / ".dose/logs/refs" / mbranchName, ec);//I expect log to be deleted
-			cout << "Branch '" << mbranchName << "' deleted successfully." << endl;
+			const std::array<utils::StringColorPair, 3> text{ {
+				{"Branch", utils::Color::BRIGHT_YELLOW},
+				{" '" + mbranchName + "' ", utils::Color::BRIGHT_GREEN},
+				{"deleted successfully.\n",utils::Color::BRIGHT_YELLOW},
+			} };
+			utils::printColorful(text);
 		}
 		else {
 			if (ec) {

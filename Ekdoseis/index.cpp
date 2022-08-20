@@ -1,4 +1,5 @@
 #include<algorithm>
+#include <array>
 #include "index.h"
 #include "sha1.h"
 #include "utils.h"
@@ -11,9 +12,7 @@ void Index::fetchFromIndex() {
 	}
 	std::ifstream indexiptr{ mindexPath };
 	if (!indexiptr) {
-		std::stringstream errmsg;
-		errmsg << "Error: " << "cannot open index file" << endl;
-		utils::printError(errmsg.str());
+		utils::printError("Error: couldnot open index file");
 		exit(EXIT_SUCCESS);
 	}
 	indexiptr >> mtreeCount;
@@ -33,9 +32,7 @@ index::FileStatus Index::getFileStatus(const fs::path& filePath, bool updateInde
 		fs::path fileIndex{ mrefToRootPath / entry.fileName };
 		bool match = fs::equivalent(mrefToRootPath / entry.fileName, filePath, ec);
 		if (ec) {
-			std::stringstream errmsg;
-			errmsg << "An error occured. " << ec.message();
-			utils::printError(errmsg.str());
+			utils::printError("Error: An error occured. " + ec.message());
 			exit(EXIT_SUCCESS);
 		}
 		if (match) {
@@ -74,10 +71,7 @@ index::FileStatus Index::getFileStatus(const fs::path& filePath, bool updateInde
 				std::error_code ec;
 				fs::copy_file(filePath, _hashFilePath, fs::copy_options::skip_existing, ec); //no encryption now maybe later
 				if (ec) {
-					std::stringstream msg;
-					msg << "Error: " << ec.message() << endl;
-					msg << "Error: " << "cannot perform the required action" << endl;
-					utils::printError(msg.str());
+					utils::printError("Error: cannot perform the required action\nError:" + ec.message());
 					exit(EXIT_SUCCESS);
 				}
 
@@ -153,16 +147,22 @@ bool Index::add(const fs::path & filePath, const std::string & hash) {
 		return true;
 	}
 	if (fileStatus == COMMITTED) {
+		const std::array<utils::StringColorPair, 3> arr{ {
+				{"File:", utils::Color::BRIGHT_YELLOW},
+				{" '" + filePath.string() + "' ",utils::Color::BRIGHT_GREEN},
+				{"is upto date.\n", utils::Color::BRIGHT_YELLOW},
+				} };
+		utils::printColorful(arr);
 
-		utils::ConsoleHandler handler;
-		handler.setColor(utils::Color::BRIGHT_BLUE);
-		cout << "nothing to add in file " << filePath << endl;
 		return false;
 	}
 	if (fileStatus == STAGED) {
-		utils::ConsoleHandler handler;
-		handler.setColor(utils::Color::BRIGHT_BLUE);
-		cout << "file: " << filePath << " is already staged" << endl;
+		const std::array<utils::StringColorPair, 3> arr{ {
+				{"File:", utils::Color::BRIGHT_YELLOW},
+				{" '" + filePath.string() + "' ",utils::Color::BRIGHT_GREEN},
+				{"is already staged\n.", utils::Color::BRIGHT_YELLOW},
+				} };
+		utils::printColorful(arr);
 		return false;
 	}
 	struct _stat stat;
@@ -170,9 +170,12 @@ bool Index::add(const fs::path & filePath, const std::string & hash) {
 	std::error_code ec;
 	fs::path relativePath = fs::relative(filePath, mrefToRootPath, ec);
 	if (ec) {
-		std::stringstream errmsg;
-		errmsg << "Error: cannot stage " << filePath.string() << endl;
-		utils::printError(errmsg.str());
+
+		const std::array<utils::StringColorPair, 2> arr{ {
+				{"ERROR: couldnot stage", utils::Color::BRIGHT_RED},
+				{" '" + filePath.string() + "' \n",utils::Color::BRIGHT_GREEN},
+				} };
+		utils::printColorful(arr);
 		(EXIT_SUCCESS);
 		return false;
 	}
@@ -227,7 +230,6 @@ void Index::checkcout(Index & newIndex) {
 		fs::path fromP{ mrefToRootPath / ".dose/objects/" / newEntry.sha1.substr(0,2) / newEntry.sha1.substr(2,40 - 2) };
 		fs::path toP{ mrefToRootPath / newEntry.fileName };
 		std::ifstream tp{ toP };
-		cout << tp.rdbuf();
 		tp.close();
 		std::error_code ec;
 		bool _tb = fs::copy_file(fromP, toP, fs::copy_options::overwrite_existing, ec);

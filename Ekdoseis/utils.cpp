@@ -79,8 +79,6 @@ uint64_t utils::getTime() {
 	using namespace std::chrono;
 	uint64_t ms = duration_cast<seconds>(
 		system_clock::now().time_since_epoch()).count();
-
-	std::cout << "ms  " << ms << endl;
 	return ms;
 }
 
