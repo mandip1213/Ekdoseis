@@ -107,7 +107,6 @@ utils::ConsoleHandler::ConsoleHandler() {
 	GetConsoleScreenBufferInfo(mhandler, &minitialAttr);
 
 	mbgcolor = minitialAttr.wAttributes & (~0b1111);
-	std::cout << mbgcolor << endl << endl;
 }
 utils::ConsoleHandler::~ConsoleHandler() {
 	resetColor();
