@@ -142,7 +142,9 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="branch.cpp" />
+    <ClCompile Include="checkout.cpp" />
     <ClCompile Include="commit.cpp" />
+    <ClCompile Include="commitaction.cpp" />
     <ClCompile Include="dose.cpp" />
     <ClCompile Include="index.cpp" />
     <ClCompile Include="main.cpp" />
@@ -151,19 +153,26 @@
     <ClCompile Include="sha1.cpp" />
     <ClCompile Include="blob.cpp" />
     <ClCompile Include="doseignore.cpp" />
+    <ClCompile Include="add.cpp" />
     <ClCompile Include="tree.cpp" />
     <ClCompile Include="utils.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="add.h" />
     <ClInclude Include="branch.h" />
+    <ClInclude Include="checkout.h" />
+    <ClInclude Include="command.h" />
     <ClInclude Include="commit.h" />
+    <ClInclude Include="commitaction.h" />
     <ClInclude Include="dose.h" />
     <ClInclude Include="blob.h" />
     <ClInclude Include="doseignore.h" />
     <ClInclude Include="enums.h" />
     <ClInclude Include="hash.h" />
     <ClInclude Include="merge.h" />
+    <ClInclude Include="other.h" />
     <ClInclude Include="parser.h" />
+    <ClInclude Include="restore.h" />
     <ClInclude Include="sha1.h" />
     <ClInclude Include="tree.h" />
     <ClInclude Include="utils.h" />

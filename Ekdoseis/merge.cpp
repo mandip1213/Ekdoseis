@@ -130,6 +130,10 @@ void Merge::merge() {
 	//Dose::updateHead(mrootPath,)//no need
 
 
+	const std::array<utils::StringColorPair, 1> arr{ {
+				   {"Successfullly merged branch", utils::Color::BRIGHT_YELLOW},
+				   } };
+	utils::printColorful(arr);
 
 
 

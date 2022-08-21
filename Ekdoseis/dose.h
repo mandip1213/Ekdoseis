@@ -12,13 +12,14 @@
 //using namespace std::filesystem;
 namespace fs = std::filesystem;
 //using namespace filesystem;
+class Command;
 
 class Dose {
 private:
 	fs::path mrootPath;
 	DoseCommand mcommand;
 	int margc;
-	const char** margv;
+	 char** margv;
 	void errorExit();
 	DoseIgnore doseIgnore;
 	Index mindex;
@@ -30,17 +31,16 @@ private:
 
 public:
 	//	Dose() = default;
-	Dose(int n, const  char* ptr[]);
+	Dose(int n, char* ptr[]);
 	friend	 std::ostream& operator<<(std::ostream& out, const Dose& dose);
-	void addFile(const fs::path& filePath);
 	static void  updateHead(const fs::path& rootPath, const std::string& reference);
 	Dose& parseRootCommand();
 	Dose& execCommand();
 	Dose& init();
-	Dose& add();
-	Dose& commit();
+	//Dose& commit();
 	Dose& status();
 	Dose& log();
+	Command* getCommand();
 	Dose& checkout();
 	Dose& restore();
 	Dose& branch();
